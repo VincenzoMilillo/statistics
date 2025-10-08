@@ -1,0 +1,159 @@
+/* --------------------------------------------
+   Homework 0 – The Data Detective
+   Custom stylesheet for this specific assignment
+   Author: Vincenzo Milillo
+   -------------------------------------------- */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #181c20;
+  --surface: #23272f;
+  --accent: #00ffd0;
+  --accent2: #4b7fff;
+  --text: #e5e9f0;
+  --muted: #7c8da4;
+  --radius: 12px;
+  --shadow: 0 2px 12px 0 #0008;
+  --font: 'JetBrains Mono', monospace;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 18px;
+  min-height: 100vh;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------------- Header ---------------- */
+header {
+  background: var(--surface);
+  padding: 2rem 1rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 1px solid #222;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: var(--accent);
+}
+
+nav a {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.4rem 1rem;
+  background: var(--surface);
+}
+
+nav a:hover {
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  background: #1e2229;
+}
+
+/* ---------------- Main Content ---------------- */
+main {
+  flex: 1;
+  padding: 2rem 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+main section {
+  margin-bottom: 2rem;
+}
+
+main h2 {
+  color: var(--accent);
+  margin-bottom: 1rem;
+}
+
+main p {
+  line-height: 1.7;
+  margin-bottom: 1rem;
+}
+
+main ul {
+  list-style: none;
+  padding: 0;
+  margin: 1rem auto;
+  text-align: left;
+  display: inline-block;
+}
+
+main li {
+  margin: 0.5rem 0;
+  color: var(--text);
+}
+
+strong {
+  color: var(--accent2);
+}
+
+/* ---------------- Images ---------------- */
+figure {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+figure img {
+  max-width: 350px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px #00ffd055;
+  transition: transform 0.3s ease;
+}
+
+figure img:hover {
+  transform: scale(1.05);
+}
+
+figcaption {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin-top: 0.4rem;
+}
+
+figure figcaption {
+  margin-top: 12px;
+}
+
+/* ---------------- Footer ---------------- */
+footer {
+  text-align: center;
+  padding: 1.2rem 0 1rem 0;
+  background: #181c20;
+  color: var(--muted);
+  font-size: 0.9rem;
+  border-top: 1px solid #222;
+  opacity: 0.85;
+}
+
+/* ---------------- Responsive ---------------- */
+@media (max-width: 600px) {
+  main {
+    padding: 1rem 0.8rem;
+    font-size: 1rem;
+  }
+
+  figure img {
+    max-width: 250px;
+  }
+}
