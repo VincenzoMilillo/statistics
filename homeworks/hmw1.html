@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Post 1 - Statistics & Cybersecurity</title>
+  <link rel="stylesheet" href="../style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a href="post1.html" class="active">Post 1</a>
+    </nav>
+  </header>
+  <main>
+    <h2>Post 1: Example Assignment</h2>
+    <p>
+      This is a template for your post. Replace this with your answer, summary, images, and graphs.
+    </p>
+    <h3>Sample Bar Chart</h3>
+    <canvas id="barChart" height="180"></canvas>
+    <script>
+      const ctx = document.getElementById('barChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['A', 'B', 'C', 'D', 'E'],
+          datasets: [{
+            label: 'Data',
+            data: [12, 19, 7, 5, 14],
+            backgroundColor: 'rgba(0,255,208,0.4)',
+            borderColor: 'rgba(0,255,208,0.9)',
+            borderWidth: 2,
+            borderRadius: 8,
+          }]
+        },
+        options: {
+          plugins: { legend: { labels: { color: '#e5e9f0' }}},
+          scales: {
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }},
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }}
+          }
+        }
+      });
+    </script>
+    <p>
+      <img src="../images/sample.png" alt="Sample" style="max-width:350px;border-radius:8px;margin:1rem 0;">
+    </p>
+  </main>
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo</p>
+  </footer>
+</body>
+</html>
