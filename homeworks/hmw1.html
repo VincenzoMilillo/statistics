@@ -4,8 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Post 1 - Statistics & Cybersecurity</title>
-  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../assets/css/style-hmw1.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(','\\)'], ['$', '$']],   // allow \( \) and $ $
+        displayMath: [['\\[','\\]'], ['$$','$$']]
+      },
+      options: {
+        // don’t typeset inside code/pre blocks
+        skipHtmlTags: ['script','noscript','style','textarea','pre','code']
+      }
+    };
+  </script>
+  <!-- MathJax loader -->
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs/themes/prism-okaidia.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/prism.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs/components/prism-sql.min.js"></script>
+
 </head>
 <body>
   <header>
@@ -13,46 +31,383 @@
     <br>
     <nav>
       <a href="../index.html">Home</a>
-      <a href="hmw1.html" class="active">Homework 2 (todo)</a>
+      <a href="hmw1.html" class="active">Homework 3 (todo)</a>
     </nav>
   </header>
   <main>
-    <h2>Post 1: Example Assignment</h2>
-    <p>
-      This is an example, I needed to commit to trigger pages!!
-    </p>
-    <h3>Sample Bar Chart</h3>
+    <h2>Definitions: Dataset and Distribution</h2>
+<p>
+  <strong>Dataset.</strong> A dataset is a table where each <em>row</em> is a statistical unit (observation) and each
+  <em>column</em> is a variable describing an attribute of those units. An attribute becomes a variable once a
+  <em>scale</em> is set (weight in kg; <code>time_of_day</code> ∈ {morning, afternoon, evening}). Variables can be
+  <em>qualitative</em> (categorical/ordinal) or <em>quantitative</em> (numeric). The data table is a matrix of units
+  × variables; here we work with small k (k &lt; 3).
+</p>
+
+<p>
+  <strong>Distribution.</strong> A distribution describes how the values of one or more variables are spread across the dataset.
+  It is built from <em>frequencies</em> (counts) and <em>relative frequencies</em> (counts ÷ total). In descriptive statistics we
+  report frequencies; in inferential statistics we model probabilities, often estimated by relative frequencies.
+</p>
+
+<h3>Univariate vs Multivariate</h3>
+<p>
+  <strong>Univariate distribution</strong> (1 variable): values or bins with counts/percentages.
+      Examples: the frequency of <code>snack_type</code>; a histogram of numeric duration.
+  <br>
+  <br>
+  <strong>Multivariate distribution</strong> (2+ variables): joint behavior of variables.
+      <em>Bivariate</em> (2 vars) for two categoricals is shown with a contingency table; from the joint you can derive
+      <em>marginals</em> and <em>conditionals</em> P(time | snack) and assess association/independence.
+</p>
+
+<h3>My dataset: what it contains and what it studies</h3>
+<p>
+  We collected <strong>36 observations</strong> of snack choices with <strong>k = 2 variables</strong>:
+  <em>snack_type</em> ∈ {fruit, nuts, chips, yogurt, chocolate} and
+  <em>time_of_day</em> ∈ {morning, afternoon, evening}.
+  The goal is to describe how often each snack appears in the sample and, more broadly,
+  to provide a basis for studying whether snack preferences change across the day.
+  In this post we report the <strong>univariate distributions</strong> for both variables; a bivariate view can follow.
+</p>
+<p class="muted">
+  Note: moving from the raw table to distributions removes the link to individuals, which reduces detail but preserves
+  the aggregate pattern (often desirable for privacy). With small samples, nearby percentages may differ due to sampling noise.
+</p>
+    <h3>Snack distribution (univariate)</h3>
     <canvas id="barChart" height="180"></canvas>
+
+    <h3>Time of day distribution (univariate)</h3>
+    <canvas id="timeChart" height="180"></canvas>
+
+    <!-- Value-label plugin: must appear BEFORE any new Chart(...) calls -->
     <script>
-      const ctx = document.getElementById('barChart').getContext('2d');
-      new Chart(ctx, {
+      // Minimal value-label plugin (prints the value above each bar)
+      const valueLabelPlugin = {
+        id: 'valueLabel',
+        afterDatasetsDraw(chart, args, pluginOptions) {
+          const { ctx } = chart;
+          ctx.save();
+          ctx.font = '12px JetBrains Mono, monospace';
+          ctx.fillStyle = pluginOptions?.color || '#e5e9f0';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'bottom';
+          chart.data.datasets.forEach((dataset, di) => {
+            const meta = chart.getDatasetMeta(di);
+            meta.data.forEach((bar, i) => {
+              const value = dataset.data[i];
+              const y = bar.y - 4;
+              ctx.fillText(value, bar.x, y);
+            });
+          });
+          ctx.restore();
+        }
+      };
+    </script>
+
+    <!-- Charts -->
+    <script>
+      // Data from your computed distributions (counts)
+      // Snacks (casual order)
+      const snackLabels = ['yogurt','chocolate','fruit','chips','nuts'];
+      const snackCounts = [6, 4, 11, 7, 8];
+      const snackPerc   = [16.7, 11.1, 30.6, 19.4, 22.2];
+
+      // Time of day (ordered)
+      const timeLabels = ['morning','afternoon','evening'];
+      const timeCounts = [10, 13, 13];
+      const timePerc   = [27.8, 36.1, 36.1];
+
+      // Helper: tooltips show both count and percentage
+      const fmt = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+      const tooltipBoth = (counts, perc, label) => ({
+        callbacks: {
+          label: (ctx) => ` ${label}: ${counts[ctx.dataIndex]} (${fmt.format(perc[ctx.dataIndex])}%)`
+        }
+      });
+
+      // SNACK chart
+      const snackCtx = document.getElementById('barChart').getContext('2d');
+      new Chart(snackCtx, {
         type: 'bar',
         data: {
-          labels: ['A', 'B', 'C', 'D', 'E'],
+          labels: snackLabels,
           datasets: [{
-            label: 'Data',
-            data: [12, 19, 7, 5, 14],
-            backgroundColor: 'rgba(0,255,208,0.4)',
+            label: 'Snack frequency (n)',
+            data: snackCounts,
+            backgroundColor: 'rgba(0,255,208,0.35)',
             borderColor: 'rgba(0,255,208,0.9)',
             borderWidth: 2,
-            borderRadius: 8,
+            borderRadius: 8
           }]
         },
         options: {
-          plugins: { legend: { labels: { color: '#e5e9f0' }}},
+          plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            tooltip: tooltipBoth(snackCounts, snackPerc, 'count'),
+            valueLabel: { color: '#e5e9f0' } // our plugin options
+          },
           scales: {
-            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }},
-            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }}
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true, precision: 0 }
           }
-        }
+        },
+        plugins: [valueLabelPlugin] // activate custom labels
+      });
+
+      // TIME chart
+      const timeCtx = document.getElementById('timeChart').getContext('2d');
+      new Chart(timeCtx, {
+        type: 'bar',
+        data: {
+          labels: timeLabels,
+          datasets: [{
+            label: 'Time of day frequency (n)',
+            data: timeCounts,
+            backgroundColor: 'rgba(0,136,255,0.30)',
+            borderColor: 'rgba(0,136,255,0.9)',
+            borderWidth: 2,
+            borderRadius: 8
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            tooltip: tooltipBoth(timeCounts, timePerc, 'count'),
+            valueLabel: { color: '#e5e9f0' }
+          },
+          scales: {
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true, precision: 0 }
+          }
+        },
+        plugins: [valueLabelPlugin]
       });
     </script>
-    <p>
-      <img src="../images/sample.png" alt="Sample" style="max-width:350px;border-radius:8px;margin:1rem 0;">
-    </p>
+    <!-- End Charts -->
+    <br>
+    <br>
+    <section id="methods">
+      <h2>How I computed the univariate distributions</h2>
+
+      <div class="callout">
+        <h3>Technologies used — what and why</h3>
+        <p><strong>SQLite</strong> (embedded database). It runs as a single <code>.db</code> file with no server to install.
+          For a tiny assignment (k &lt; 3, a few dozen rows) this maximises portability and reproducibility compared
+          to server databases (PostgreSQL) and avoids platform lock-in.</p>
+        <p><strong>sqlite3 shell.</strong> Simple command-line client to execute queries and export results.</p>
+        <p><strong>Chart.js.</strong> Client-side charts rendered directly in this HTML page; no backend required.</p>
+        <p><strong>Static site (HTML/CSS/JS).</strong> Everything can be rebuilt locally and versioned in Git.</p>
+      </div>
+
+      <h3>SQL code used to get the <output></output></h3>
+      <div class="codebox">
+          <pre><code class="language-sql">-- Univariate distribution: snack_type (counts + percentages)
+        WITH total AS (SELECT COUNT(*) AS n FROM observations)
+        SELECT
+          snack_type,
+          COUNT(*) AS count,
+          ROUND(100.0 * COUNT(*) / (SELECT n FROM total), 1) AS pct
+        FROM observations
+        GROUP BY snack_type
+        ORDER BY count DESC, snack_type;
+
+-- Univariate distribution: time_of_day (counts + percentages)
+        WITH total AS (SELECT COUNT(*) AS n FROM observations)
+        SELECT
+          time_of_day,
+          COUNT(*) AS count,
+          ROUND(100.0 * COUNT(*) / (SELECT n FROM total), 1) AS pct
+        FROM observations
+        GROUP BY time_of_day
+        ORDER BY count DESC, time_of_day;
+         </code></pre>
+         <br>
+        <p class="break-lines">
+        -- Sample output (from sqlite3 shell):
+        fruit|11|30.6
+        nuts|8|22.2
+        chips|7|19.4
+        yogurt|6|16.7
+        chocolate|4|11.1
+
+        morning|10|27.8
+        afternoon|13|36.1
+        evening|13|36.1
+        </p>
+      </div>
+
+      <h3>What the SQL computes (formulas)</h3>
+      <div class="formula">
+        <p><span class="sym">n</span> = total number of observations.</p>
+        <p><span class="sym">n<sub>v</sub></span> = count of category <span class="sym">v</span> for variable <span class="sym">X</span>.</p>
+        <p><strong>Absolute frequency:</strong> <code>n_v</code></p>
+        <p><strong>Relative frequency:</strong> <code>f_v = n_v / n</code></p>
+        <p><strong>Percentage:</strong> <code>p_v = 100 × f_v = 100 × (n_v / n)</code></p>
+        <p>Example (snack_type): for <em>fruit</em>, <code>n_v = 11</code> and <code>n = 36</code> ⇒
+          <code>f_v = 11/36 ≈ 0.306</code> ⇒ <code>p_v = 30.6%</code>. Same logic for <em>time_of_day</em>.</p>
+      </div>
+      <br>
+      <br>
+      <!-- ===== APPEND INSIDE YOUR EXISTING <section id="methods"> (at the end) ===== -->
+      <h2>Bivariate distribution: what it represents</h2>
+      <p>
+        Let <code>n</code> be the total number of observations. For each snack category <code>i</code> and time-of-day
+        category <code>j</code>, the bivariate (joint) distribution counts how many observations fall in that pair,
+        forming a contingency table <code>n<sub>i,j</sub></code>. From the joint table you obtain marginals (each
+        variable alone) and conditionals (the distribution of time given a snack).
+      </p>
+
+      <h3>SQL used to build the contingency table (counts)</h3>
+      <div class="codebox">
+        <pre><code class="language-sql">-- Bivariate distribution (contingency table, counts)
+SELECT
+  snack_type,
+  SUM(CASE WHEN time_of_day='morning'   THEN 1 ELSE 0 END) AS morning,
+  SUM(CASE WHEN time_of_day='afternoon' THEN 1 ELSE 0 END) AS afternoon,
+  SUM(CASE WHEN time_of_day='evening'   THEN 1 ELSE 0 END) AS evening,
+  COUNT(*) AS row_total
+FROM observations
+GROUP BY snack_type
+ORDER BY snack_type;
+
+-- Row-wise percentages: P(time | snack)
+WITH ct AS (
+  SELECT snack_type, time_of_day, COUNT(*) AS n
+  FROM observations
+  GROUP BY snack_type, time_of_day
+),
+row_tot AS (
+  SELECT snack_type, SUM(n) AS row_n
+  FROM ct GROUP BY snack_type
+)
+SELECT
+  c.snack_type,
+  ROUND(100.0 * SUM(CASE WHEN c.time_of_day='morning'   THEN c.n ELSE 0 END)/r.row_n,1) AS morning_pct,
+  ROUND(100.0 * SUM(CASE WHEN c.time_of_day='afternoon' THEN c.n ELSE 0 END)/r.row_n,1) AS afternoon_pct,
+  ROUND(100.0 * SUM(CASE WHEN c.time_of_day='evening'   THEN c.n ELSE 0 END)/r.row_n,1) AS evening_pct
+FROM ct c
+JOIN row_tot r USING (snack_type)
+GROUP BY c.snack_type, r.row_n
+ORDER BY c.snack_type;</code></pre>
+<p class="break-lines">
+-- Bivariate output (row-wise % P(time|snack))
+chips|0.0|42.9|57.1
+chocolate|0.0|25.0|75.0
+fruit|45.5|36.4|18.2
+nuts|25.0|37.5|37.5
+yogurt|50.0|33.3|16.7
+</p>
+      </div>
+
+      <h3>Formulas (joint, marginal, conditional)</h3>
+      <div class="formula">
+        <p><strong>Joint count:</strong> <code>n<sub>i,j</sub> = # { rows with snack = i and time = j }</code></p>
+        <p><strong>Joint proportion:</strong> <code>p<sub>i,j</sub> = n<sub>i,j</sub> / n</code></p>
+        <p><strong>Row marginal:</strong> <code>r<sub>i</sub> = Σ<sub>j</sub> n<sub>i,j</sub></code> &nbsp; (all times for snack <code>i</code>)</p>
+        <p><strong>Column marginal:</strong> <code>c<sub>j</sub> = Σ<sub>i</sub> n<sub>i,j</sub></code> &nbsp; (all snacks at time <code>j</code>)</p>
+        <p><strong>Row-conditional (time given snack):</strong> <code>P(time=j | snack=i) = n<sub>i,j</sub> / r<sub>i</sub></code></p>
+        <p><strong>Column-conditional (snack given time):</strong> <code>P(snack=i | time=j) = n<sub>i,j</sub> / c<sub>j</sub></code></p>
+      </div>
+      <!-- ===== END METHODS ADDITIONS ===== -->
+  </section>
+
+  <!-- ===== BIVARIATE DISTRIBUTION (place this after your univariate charts) ===== -->
+  <h3>Bivariate distribution: snack × time_of_day</h3>
+  <p>
+  A bivariate distribution shows how two variables occur together. In this chart, the x-axis is
+  <em>time_of_day</em> and each bar is stacked by <em>snack_type</em>: the total bar height is the number of
+  observations at that time, and each segment’s height is the count for that snack at that time.
+  </p>
+  <p class="muted">
+    Read it two ways: (i) within a snack, compare its segments across bars to see when it is chosen
+    (≈ conditional pattern <code>P(time | snack)</code>); (ii) within a time, compare segment sizes to see which
+    snacks dominate at that time (≈ <code>P(snack | time)</code>). With small counts, percentages can be noisy—report
+    counts alongside % to avoid over-interpreting.
+  </p>
+  <canvas id="bivarChart" height="220"></canvas>
+
+  <!-- ===== BIVARIATE CHART DATA (replace your previous bivarChart <script> block) ===== -->
+  <script>
+    // Row-wise percentages P(time | snack) provided by you:
+    const perc = {
+      chips:     [0.0, 42.9, 57.1],
+      chocolate: [0.0, 25.0, 75.0],
+      fruit:     [45.5, 36.4, 18.2],
+      nuts:      [25.0, 37.5, 37.5],
+      yogurt:    [50.0, 33.3, 16.7],
+    };
+
+    // Counts consistent with your percentages and marginals:
+    // snack totals: fruit 11, nuts 8, chips 7, yogurt 6, chocolate 4
+    // time labels ordered as requested: morning, afternoon, evening
+    const bivar = {
+      labels: ['morning','afternoon','evening'],
+      fruit:      [5, 4, 2],  // 45.5%, 36.4%, 18.2% of 11
+      nuts:       [2, 3, 3],  // 25.0%, 37.5%, 37.5% of 8
+      chips:      [0, 3, 4],  // 0.0%, 42.9%, 57.1% of 7
+      yogurt:     [3, 2, 1],  // 50.0%, 33.3%, 16.7% of 6
+      chocolate:  [0, 1, 3],  // 0.0%, 25.0%, 75.0% of 4
+    };
+
+    const bivarCtx = document.getElementById('bivarChart').getContext('2d');
+    new Chart(bivarCtx, {
+      type: 'bar',
+      data: {
+        labels: bivar.labels,
+        datasets: [
+          { label: 'fruit',     data: bivar.fruit,     backgroundColor: 'rgba(0,255,208,0.35)', borderColor: 'rgba(0,255,208,0.9)', borderWidth: 2, borderRadius: 6 },
+          { label: 'nuts',      data: bivar.nuts,      backgroundColor: 'rgba(75,127,255,0.30)', borderColor:   'rgba(75,127,255,0.90)', borderWidth: 2, borderRadius: 6 },
+          { label: 'chips',     data: bivar.chips,     backgroundColor: 'rgba(255,193,7,0.30)',  borderColor:   'rgba(255,193,7,0.90)',  borderWidth: 2, borderRadius: 6 },
+          { label: 'yogurt',    data: bivar.yogurt,    backgroundColor: 'rgba(156,204,101,0.30)',borderColor:   'rgba(156,204,101,0.90)',borderWidth: 2, borderRadius: 6 },
+          { label: 'chocolate', data: bivar.chocolate, backgroundColor: 'rgba(236,64,122,0.30)', borderColor:   'rgba(236,64,122,0.90)', borderWidth: 2, borderRadius: 6 },
+        ]
+      },
+      options: {
+        plugins: {
+          legend: { labels: { color: '#e5e9f0' } },
+          tooltip: {
+            callbacks: {
+              // Show count + your row-wise percentage P(time | snack)
+              label: (ctx) => {
+                const snack = ctx.dataset.label;
+                const idx = ctx.dataIndex; // 0=morning,1=afternoon,2=evening
+                const count = ctx.parsed.y;
+                const p = perc[snack][idx];
+                return ` ${snack}: ${count} (${p}%)`;
+              }
+            }
+          },
+          valueLabel: { color: '#e5e9f0' } // uses your existing plugin to print counts on bars
+        },
+        scales: {
+          x: { stacked: true, ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+          y: { stacked: true, ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true, precision: 0 }
+        }
+      },
+      plugins: [valueLabelPlugin]
+    });
+  </script>
+  <!-- ===== END BIVARIATE CHART ===== -->
+
+  <!-- Section separator line -->
+  <hr class="section-sep">
+
+  <!-- ====== START OF PART 2 ====== -->
+  <h2>Part 2 — Letter Frequency & Caesar Cipher</h2>
+
+  <p class="lead">
+    In this section we will compute the letter-frequency distribution of a chosen text, compare it to a
+    language baseline, and then decrypt a Caesar-shifted text by matching frequency patterns.
+  </p>
+  
+  
+  
+
+
   </main>
   <footer>
-    <p>&copy; 2025 Vincenzo Milillo</p>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
   </footer>
 </body>
 </html>
