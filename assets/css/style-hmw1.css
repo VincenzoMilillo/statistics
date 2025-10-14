@@ -286,6 +286,13 @@ footer {
   background: linear-gradient(90deg, transparent, #2a3540, transparent);
 }
 
+/* ===== Add to assets/style-hmw1.css (small helper for shift badges) ===== */
+.metrics {
+  max-width: 860px;
+  margin: .25rem auto .75rem;
+  text-align: left;
+  opacity: .95;
+}
 
 /* --- headings spacing in methods section --- */
 #methods h2 { margin-top: 0; }

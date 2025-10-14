@@ -200,7 +200,7 @@
         <p><strong>Static site (HTML/CSS/JS).</strong> Everything can be rebuilt locally and versioned in Git.</p>
       </div>
 
-      <h3>SQL code used to get the <output></output></h3>
+      <h3>SQL code used to get the output<output></output></h3>
       <div class="codebox">
           <pre><code class="language-sql">-- Univariate distribution: snack_type (counts + percentages)
         WITH total AS (SELECT COUNT(*) AS n FROM observations)
@@ -391,8 +391,11 @@ yogurt|50.0|33.3|16.7
   <!-- ===== END BIVARIATE CHART ===== -->
 
   <!-- Section separator line -->
+  <br>
+  <br>
   <hr class="section-sep">
-
+  <br>
+  <br>
   <!-- ====== START OF PART 2 ====== -->
   <h2>Part 2 — Letter Frequency & Caesar Cipher</h2>
 
@@ -400,11 +403,531 @@ yogurt|50.0|33.3|16.7
     In this section we will compute the letter-frequency distribution of a chosen text, compare it to a
     language baseline, and then decrypt a Caesar-shifted text by matching frequency patterns.
   </p>
-  
-  
-  
 
+  <div class="callout">
+    <h3>What we will do</h3>
+    <p><strong>1.</strong> Compute the sample text letter frequency distribution.</p>
+    <p><strong>2.</strong> Compare with the Italian letter frequency baseline.</p>
+    <p><strong>3.</strong> Caesar Cipher: decode by comparing frequency patterns.</p>
+  </div>
 
+  <!-- Chosen text (colored by letter) -->
+  <h3>1. Sample text letter frequency distribution</h3>
+  <div class="textcard" id="sampleTextColored" aria-label="Sample text colored by letter"></div>
+
+  <!-- Charts -->
+  <br>
+  <h3>Letter frequency — Sample text</h3>
+  <canvas id="freqTextChart" height="220"></canvas>
+  <br>
+  <h3>2. Italian letter frequency baseline</h3>
+  <canvas id="freqBaselineChart" height="220"></canvas>
+
+  <script>
+
+    /* Italian alphabet (21 letters): a b c d e f g h i l m n o p q r s t u v z */
+    const itLetters = ['a','b','c','d','e','f','g','h','i','l','m','n','o','p','q','r','s','t','u','v','z'];
+    const itSet = new Set(itLetters);
+
+    /* Your chosen sample text (unchanged) */
+    const sampleText = `I migliori inganni sono quelli in cui sembra che si lasci la scelta agli altri: le vittime sono convinte di avere il controllo della situazione, mentre in realtà sono burattini al vostro comando.
+    Date agli altri alternative che si risolvano tutte a vostro vantaggio. Induceteli a scegliere il minore di due mali che servono entrambi al vostro scopo. Inchiodateli tra i corni del dilemma:
+    qualsiasi cosa scelgano, non avranno scampo.`;
+
+    /* Italian baseline (%) for the 21 letters above IN THE SAME ORDER */
+    const itBaselinePct = [
+      11.74, /* a */ 0.92, /* b */ 4.50, /* c */ 3.73, /* d */ 11.79, /* e */
+      0.95, /* f */ 1.64, /* g */ 1.54, /* h */ 11.28, /* i */
+      6.51, /* l */ 2.51, /* m */ 6.88, /* n */ 9.83, /* o */
+      3.05, /* p */ 0.51, /* q */ 6.37, /* r */ 4.98, /* s */
+      5.62, /* t */ 3.01, /* u */ 2.10, /* v */ 0.49  /* z */
+    ];
+
+    /* Utilities */
+    function normalizeForCount(s){
+      const noDiacritics = s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+      return noDiacritics.toLowerCase();
+    }
+    function countItalianLetters(s){
+      const counts = Array(itLetters.length).fill(0);
+      for(const ch of s){
+        if (itSet.has(ch)) {
+          const idx = itLetters.indexOf(ch);
+          counts[idx]++;
+        }
+      }
+      return counts;
+    }
+    function toPerc(counts){
+      const n = counts.reduce((a,b)=>a+b,0) || 1;
+      return counts.map(v => 100*v/n);
+    }
+    function normalizeBaseline(pct){
+      const s = pct.reduce((a,b)=>a+b,0) || 1;
+      return pct.map(v => 100*v/s);
+    }
+
+    /* Per-letter color map (over 21 letters, not 26) */
+    function colorForLetter21(ch){
+      const idx = itLetters.indexOf(ch.toLowerCase());
+      if (idx === -1) return '#e5e9f0';
+      const hue = (idx * 137.508) % 360; // spread nicely
+      return `hsl(${hue}deg 70% 60%)`;
+    }
+
+    /* Render the colored text card (letters outside the 21-set are shown muted) */
+    function renderColoredText(raw){
+      const el = document.getElementById('sampleTextColored');
+      const s = normalizeForCount(raw);
+      const frag = document.createDocumentFragment();
+      for(const ch of s){
+        if (itSet.has(ch)) {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'ch';
+          span.style.color = colorForLetter21(ch);
+          frag.appendChild(span);
+        } else if (/[a-z]/.test(ch)) {
+          const span = document.createElement('span');
+          span.textContent = ch;   // j k w x y and any other latin letter
+          span.className = 'nonit';
+          frag.appendChild(span);
+        } else if (/\s/.test(ch)) {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'space';
+          frag.appendChild(span);
+        } else {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'punct';
+          frag.appendChild(span);
+        }
+      }
+      el.innerHTML = '';
+      el.appendChild(frag);
+    }
+
+    /* Charts */
+    function buildTextChart(counts){
+      const ctx = document.getElementById('freqTextChart').getContext('2d');
+      const perc = toPerc(counts);
+      const colors = itLetters.map(l => colorForLetter21(l));
+      return new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: itLetters.map(l => l.toUpperCase()),
+          datasets: [{
+            label: 'Sample text (%)',
+            data: perc,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.parsed.y.toFixed(1)}%` } }
+          },
+          scales: {
+            x: { ticks: { color: '#e5e9f0', maxRotation: 0 }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function buildBaselineChart(pct){
+      const ctx = document.getElementById('freqBaselineChart').getContext('2d');
+      const norm = normalizeBaseline(pct);
+      const colors = itLetters.map(l => colorForLetter21(l));
+      return new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: itLetters.map(l => l.toUpperCase()),
+          datasets: [{
+            label: 'Italian baseline (%)',
+            data: norm,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.parsed.y.toFixed(1)}%` } }
+          },
+          scales: {
+            x: { ticks: { color: '#e5e9f0', maxRotation: 0 }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    /* Init */
+    (function(){
+      renderColoredText(sampleText);
+      const normalized = normalizeForCount(sampleText);
+      const counts = countItalianLetters(normalized);   // counts over 21 letters only
+      buildTextChart(counts);
+      buildBaselineChart(itBaselinePct);
+    })();
+  </script>
+
+  <br>
+  <!-- Caesar cipher (random shift) ===== -->
+  <h3>3. Caesar cipher (random shift & auto-decode)</h3>
+  <p class="lead">
+    We encrypt the sample text with a fixed shift and then recover the shift by matching the decoded
+    letter frequencies to the Italian baseline.
+  </p>
+  <p class="metrics">
+    <strong>Applied shift:</strong> <span id="shiftUsed">—</span> &nbsp;|&nbsp;
+    <strong>Detected shift:</strong> <span id="shiftDetected">—</span>
+  </p>
+
+  <h4>Cipher text</h4>
+  <div class="textcard" id="cipherTextColored" aria-label="Ciphered text colored by letter"></div>
+
+  <!-- Additional part -->
+  <h4>Letter frequency — Cipher text</h4>
+  <canvas id="freqCipherChart" height="200"></canvas>
+
+  <br>
+  <h3>How the shift is detected</h3>
+  <div class="formula">
+    <p>Let <code>n</code> be total letters counted (Italian alphabet only). For each letter <code>i</code> we have:</p>
+    <p><strong>Text proportion:</strong> <code>p_i = n_i / n</code> &nbsp;&nbsp;
+      <strong>Baseline proportion:</strong> <code>b_i</code> (Italian)</p>
+    <p>For every candidate decode shift <code>k</code> (0..20), rotate the cipher counts by <code>k</code>
+      and compute a chi-square–like distance:</p>
+    <p><code>score(k) = Σ_i ( (p_i - b_i)² / (b_i + 1e-9) )</code></p>
+    <p>The detected shift is the <strong>argmin</strong> of <code>score(k)</code>. We then apply that shift to the
+      ciphertext to obtain the decoded text.</p>
+  </div>
+
+  
+  
+  <h4>Distance per shift (0–20)</h4>
+  <p class="break-lines" id="shiftScoresList"></p>
+
+  <h4>Letter frequency — Auto-decoded text</h4>
+  <canvas id="freqDecodedChart" height="200"></canvas>
+
+  <script>
+    /* ===== Caesar cipher over the 21-letter Italian alphabet + auto-detect ===== */
+
+    /* We reuse itLetters, itSet, normalizeForCount, renderColoredText (already defined in your Part 2 JS) */
+
+    /* Map letter -> index for speed */
+    const itIndex = Object.fromEntries(itLetters.map((ch,i)=>[ch,i]));
+
+    /* Shift function: only letters in the 21-letter set are shifted; others stay as-is.
+      Direction: positive s encodes (plaintext -> cipher). */
+    function caesarShiftItalian(raw, s){
+      const sNorm = ((s % itLetters.length) + itLetters.length) % itLetters.length;
+      const txt = normalizeForCount(raw); // lower + strip accents (display keeps spaces/punct as is)
+      let out = '';
+      for (const ch of txt) {
+        if (itSet.has(ch)) {
+          const i = itIndex[ch];
+          const j = (i + sNorm) % itLetters.length;
+          out += itLetters[j];
+        } else {
+          out += ch; // keep spaces/punctuation/foreign letters
+        }
+      }
+      return out;
+    }
+
+    /* Count over the 21 letters */
+    function countItalian21(s){
+      const counts = Array(itLetters.length).fill(0);
+      for (const ch of s) if (itSet.has(ch)) counts[itIndex[ch]]++;
+      return counts;
+    }
+
+    /* Rotate counts to simulate decoding by k (cipher -> plaintext guess) */
+    function rotateCountsForDecode(countsCipher, k){
+      const n = itLetters.length;
+      const out = Array(n).fill(0);
+      // decoding by k means plaintext[i] = cipher[(i + k) mod n]
+      for (let i=0;i<n;i++) out[i] = countsCipher[(i + k) % n];
+      return out;
+    }
+
+    /* Convert to proportions (sum to 1) */
+    function toProp(arr){
+      const s = arr.reduce((a,b)=>a+b,0) || 1;
+      return arr.map(v => v / s);
+    }
+
+    /* Chi-square-like distance (stable, baseline in proportions) */
+    function chi2Distance(p, b){
+      let s = 0;
+      for (let i=0;i<p.length;i++){
+        const diff = p[i] - b[i];
+        s += (diff*diff) / (b[i] + 1e-9);
+      }
+      return s;
+    }
+
+    /* Build the score chart (distance vs shift 0..20) */
+    function buildScoreChart(scores){
+      const ctx = document.getElementById('scoreChart').getContext('2d');
+      const labels = [...scores.keys()].map(k=>k.toString());
+      const minIdx = scores.indexOf(Math.min(...scores));
+      const colors = scores.map((_,i)=> i===minIdx ? 'rgba(0,255,208,0.9)' : 'rgba(75,127,255,0.5)');
+      return new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{
+            label: 'Distance to Italian baseline (lower is better)',
+            data: scores,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            tooltip: { callbacks: { label: (c) => ` shift ${c.label}: ${c.parsed.y.toFixed(4)}` } }
+          },
+          scales: {
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    /* Render to different targets (reuse your coloring) */
+    function renderColoredTextTo(targetId, raw){
+      const el = document.getElementById(targetId);
+      const s = normalizeForCount(raw);
+      const frag = document.createDocumentFragment();
+      for(const ch of s){
+        if (itSet.has(ch)) {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'ch';
+          span.style.color = colorForLetter21(ch);
+          frag.appendChild(span);
+        } else if (/[a-z]/.test(ch)) {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'nonit';
+          frag.appendChild(span);
+        } else if (/\s/.test(ch)) {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'space';
+          frag.appendChild(span);
+        } else {
+          const span = document.createElement('span');
+          span.textContent = ch;
+          span.className = 'punct';
+          frag.appendChild(span);
+        }
+      }
+      el.innerHTML = '';
+      el.appendChild(frag);
+    }
+
+    /* ===== Run: encrypt with fixed shift (e.g., 18), then auto-detect ===== */
+    (function(){
+      const APPLIED_SHIFT = 18;                 // you asked for 18; can randomize if you want
+      document.getElementById('shiftUsed').textContent = APPLIED_SHIFT.toString();
+
+      // Encrypt
+      const cipherText = caesarShiftItalian(sampleText, APPLIED_SHIFT);
+      renderColoredTextTo('cipherTextColored', cipherText);
+
+      // Count cipher letters
+      const cipherCounts = countItalian21(normalizeForCount(cipherText));
+      const baselineProp = toProp(normalizeBaseline(itBaselinePct)); // proportions
+
+      // Try all decode shifts k = 0..20 and compute distance
+      const scores = [];
+      for (let k=0; k<itLetters.length; k++){
+        const decodedCounts = rotateCountsForDecode(cipherCounts, k);
+        const decodedProp = toProp(decodedCounts);
+        scores.push( chi2Distance(decodedProp, baselineProp) );
+      }
+
+      // Best shift is argmin(scores). Note: this k is the decode shift applied to cipher to get plaintext.
+      const bestK = scores.indexOf(Math.min(...scores));
+      document.getElementById('shiftDetected').textContent = bestK.toString();
+
+      // Build/refresh score chart
+      buildScoreChart(scores);
+
+      // Produce decoded text with the detected shift (cipher -> plaintext)
+      const decodedText = caesarShiftItalian(cipherText, -bestK);
+      renderColoredTextTo('decodedTextColored', decodedText);
+    })();
+  </script>
+
+  <script>
+    // === EXTRA JS: build charts for cipher & decoded + show scores ===
+
+    // Reuse colorForLetter21 and itLetters already defined
+    function buildFreqChart(canvasId, counts, label){
+      const ctx = document.getElementById(canvasId).getContext('2d');
+      const perc = (function toPerc(counts){
+        const n = counts.reduce((a,b)=>a+b,0) || 1;
+        return counts.map(v => 100*v/n);
+      })(counts);
+      const colors = itLetters.map(l => colorForLetter21(l));
+      return new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: itLetters.map(l => l.toUpperCase()),
+          datasets: [{
+            label,
+            data: perc,
+            backgroundColor: colors,
+            borderColor: colors,
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            tooltip: { callbacks: { label: (c) => ` ${c.label}: ${c.parsed.y.toFixed(1)}%` } }
+          },
+          scales: {
+            x: { ticks: { color: '#e5e9f0', maxRotation: 0 }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    // Hook into the Caesar block you already added:
+    (function(){
+      // If these variables/functions exist from your previous script, we reuse them:
+      if (typeof itLetters === 'undefined') return;
+
+      // Read already-rendered cipher/decoded texts if present; otherwise recompute quickly:
+      const cipherNode = document.getElementById('cipherTextColored');
+      const decodedNode = document.getElementById('decodedTextColored');
+
+      // We need the same counts/scores computed in your Caesar script.
+      // If you kept variable names, reuse them; otherwise recompute here:
+
+      // Pull plaintext from the earlier constant (sampleText) and re-run minimal Caesar flow:
+      const APPLIED_SHIFT = Number(document.getElementById('shiftUsed')?.textContent) || 18;
+
+      // Minimal helpers (shadowing to be safe)
+      const itSetLocal = new Set(itLetters);
+      const itIndexLocal = Object.fromEntries(itLetters.map((ch,i)=>[ch,i]));
+
+      function normalizeForCountLocal(s){
+        return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+      }
+      function caesarShiftItalianLocal(raw, s){
+        const n = itLetters.length;
+        const sNorm = ((s % n) + n) % n;
+        const txt = normalizeForCountLocal(raw);
+        let out = '';
+        for (const ch of txt){
+          if (itSetLocal.has(ch)){
+            const j = (itIndexLocal[ch] + sNorm) % n;
+            out += itLetters[j];
+          } else {
+            out += ch;
+          }
+        }
+        return out;
+      }
+      function countItalian21Local(s){
+        const counts = Array(itLetters.length).fill(0);
+        for (const ch of s) if (itSetLocal.has(ch)) counts[itIndexLocal[ch]]++;
+        return counts;
+      }
+      function rotateCountsForDecodeLocal(countsCipher, k){
+        const n = itLetters.length, out = Array(n).fill(0);
+        for (let i=0;i<n;i++) out[i] = countsCipher[(i + k) % n];
+        return out;
+      }
+      function toPropLocal(arr){ const t = arr.reduce((a,b)=>a+b,0)||1; return arr.map(v=>v/t); }
+      function normalizeBaselineLocal(pct){ const s=pct.reduce((a,b)=>a+b,0)||1; return pct.map(v=>v/s); }
+      function chi2DistanceLocal(p, b){
+        let s = 0; for (let i=0;i<p.length;i++){ const d=p[i]-b[i]; s += (d*d)/(b[i]+1e-9); } return s;
+      }
+
+      // Rebuild cipher/decoded to ensure we have counts here:
+      const cipherText = caesarShiftItalianLocal(sampleText, APPLIED_SHIFT);
+      const decodedShift = Number(document.getElementById('shiftDetected')?.textContent) || 0;
+      const decodedText = caesarShiftItalianLocal(cipherText, -decodedShift);
+
+      const cipherCounts = countItalian21Local(normalizeForCountLocal(cipherText));
+      const decodedCounts = countItalian21Local(normalizeForCountLocal(decodedText));
+
+      // Render the two frequency charts
+      buildFreqChart('freqCipherChart',  cipherCounts,  'Cipher (%)');
+      buildFreqChart('freqDecodedChart', decodedCounts, 'Decoded (%)');
+
+      // Recompute and list scores neatly
+      const baselineProp = toPropLocal(normalizeBaselineLocal(itBaselinePct));
+      const scores = [];
+      for (let k=0; k<itLetters.length; k++){
+        const dec = rotateCountsForDecodeLocal(cipherCounts, k);
+        scores.push( chi2DistanceLocal(toPropLocal(dec), baselineProp) );
+      }
+      const bestK = scores.indexOf(Math.min(...scores));
+      const lines = scores.map((v,i)=> (i===bestK ? `→ ${i}: ${v.toFixed(6)}  (min)` : `  ${i}: ${v.toFixed(6)}`));
+      document.getElementById('shiftScoresList').textContent =
+        `score(k) = Σ_i ( (p_i - b_i)^2 / (b_i + 1e-9) )\n` +
+        lines.join('\n');
+    })();
+  </script>
+
+  <br>
+  <h3>Decrypted text (invert shift by 18)</h3>
+  <div class="textcard" id="decodedShift18Colored" aria-label="Decoded text colored by letter"></div>
+  <script>
+    (function(){
+      const exists = document.getElementById('decodedShift18Colored');
+      if (!exists) return;
+      let textToDecrypt;
+      if (typeof cipherText === 'string') {
+        textToDecrypt = cipherText;
+      } else if (typeof sampleText === 'string') {
+        textToDecrypt = caesarShiftItalian(sampleText, 18);
+      } else {
+        return;
+      }
+      const decodedBy18 = caesarShiftItalian(textToDecrypt, -18);
+      renderColoredTextTo('decodedShift18Colored', decodedBy18);
+    })();
+  </script>
+  <br>
+  
+  <h3>Summary</h3>
+  <p id="finalComment" class="note"></p>
+  <script>
+    (function(){
+      const used = document.getElementById('shiftUsed')?.textContent || '—';
+      const detected = document.getElementById('shiftDetected')?.textContent || '—';
+      const el = document.getElementById('finalComment');
+      if (!el) return;
+      el.textContent =
+        `The sample’s letter distribution broadly matches the Italian baseline with expected deviations from style and length. After encrypting with a Caesar shift of ${used}, the frequency-matching decoder selected shift ${detected}, recovering the plaintext. The distance-by-shift scores and the cipher/decoded frequency charts are consistent with this result. Limitations: short texts and topic-specific vocabulary can bias frequencies; we normalize diacritics and restrict to the 21-letter Italian alphabet.`;
+    })();
+  </script>
+
+  <!-- ===== END PART 2 STRUCTURE ===== -->
   </main>
   <footer>
     <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
