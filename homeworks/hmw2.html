@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Homework 3 — Law of Large Numbers & RSA | Statistics & Cybersecurity</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw2.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a href="hmw3.html" class="active">Homework 5 (todo)</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Homework 3 — Law of Large Numbers</h2>
+
+    <p>
+      The Law of Large Numbers states that as the number of independent trials increases, 
+      the observed relative frequency of an event converges to its true probability. 
+      This is not a “mathematical convergence” in the Weierstrass sense, but a statistical one:
+      randomness averages out in the long run.
+    </p>
+
+    <div class="formula">
+      <p>Let random variables \( X_i \sim \text{Bernoulli}(p) \) be independent.</p>
+      <p>\( \hat{p}_n = \frac{1}{n}\sum_{i=1}^{n} X_i \quad \Rightarrow \quad \hat{p}_n \to p \text{ as } n \to \infty \)</p>
+    </div>
+
+    <div class="callout">
+      <h3>Simulation idea</h3>
+      <p>We generate random Bernoulli trials with success probability <strong>p = 0.5</strong>.
+      Each success adds +1; failure adds +0. The line chart shows the relative cumulative frequency 
+      (estimated probability) after each trial.</p>
+    </div>
+
+    <h3>Convergence of frequency to probability</h3>
+    <canvas id="llnLineChart" height="200"></canvas>
+    </br>
+    <div class="callout" style="margin-top:1.2rem;">
+    <h3>Relationship between \( f_n \) and \( p_n \)</h3>
+    <p>
+        In this simulation, the <strong>relative cumulative frequency</strong> \( f_n \) is defined as the proportion of successes
+        observed after \( n \) trials:
+    </p>
+    <p style="text-align:center; font-size:1.1rem;">
+        \( f_n = \frac{\text{Number of successes up to } n}{n} = \frac{1}{n}\sum_{i=1}^{n} X_i \)
+    </p>
+    <p>
+        This value \( f_n \) is identical to the <em>empirical probability</em> \( p_n \), which estimates the true probability \( p \)
+        based on observed data. The two notations describe the same quantity but \( f_n \) emphasizes its interpretation
+        as a <em>relative frequency</em>, while \( p_n \) highlights its role as a <em>probability estimator</em>.
+    </p>
+    <p>
+        As the number of trials increases, both \( f_n \) and \( p_n \) <strong>converge toward the theoretical probability</strong> \( p \),
+        illustrating the Law of Large Numbers.
+    </p>
+    </div>
+
+
+
+    <h3>Final distribution of trials</h3>
+    <p id="finalCounts" style="text-align:center; font-size:1.1rem; color:var(--accent); margin-bottom:1.5rem;">
+    Calculating...
+    </p>
+
+    <!-- ===== EXTENDED LLN SECTION (Cumulative Sign + Gaussian Curves) ===== -->
+    <h3>Cumulative number of successes across multiple experiments</h3>
+    <canvas id="signCumulativeChart" height="180"></canvas>
+    <br>
+    <h3>Gaussian-like Distribution of Relative Frequencies</h3>
+    <canvas id="gaussianTrendChart" height="220"></canvas>
+
+    <script>
+        /* ---------- Multiple cumulative count simulations ---------- */
+        const nTrials3 = 50;      // number of trials per experiment
+        const nExperiments = 100;   // how many lines to draw
+        const threshold = 0.5;     // threshold for success
+
+        const colorsExp = [
+        '#00ffd0','#4b7fff','#ff6384','#ffa600','#9c27b0',
+        '#8bc34a','#ff9800','#03a9f4','#f44336','#cddc39'
+        ];
+
+        // single experiment: +1 if random > 0.5, else +0
+        function runExperiment(n) {
+        const y = [];
+        let cumulative = 0;
+        for (let i = 1; i <= n; i++) {
+            const r = Math.random();          // random number between 0 and 1
+            if (r > threshold) cumulative += 1; // add +1 if > 0.5
+            y.push(cumulative);
+        }
+        return y;
+        }
+
+        // build data for all experiments
+        const labels = Array.from({length: nTrials3}, (_,i)=> i+1);
+        const datasets = [];
+
+        for (let e = 0; e < nExperiments; e++) {
+        const y = runExperiment(nTrials3);
+        datasets.push({
+            label: `Exp ${e+1}`,
+            data: y,
+            borderColor: colorsExp[e % colorsExp.length],
+            borderWidth: 1.2,
+            pointRadius: 0,
+            tension: 0,
+            fill: false,
+            backgroundColor: colorsExp[e % colorsExp.length] + '33'
+        });
+        }
+
+        // create chart
+        new Chart(document.getElementById('signCumulativeChart').getContext('2d'), {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            animation: false,
+            scales: {
+            x: {
+                title: { display:true, text:'Number of trials (n)', color:'#e5e9f0' },
+                ticks: { color:'#e5e9f0' },
+                grid: { color:'#23272f' }
+            },
+            y: {
+                title: { display:true, text:'Cumulative count of values > 0.5', color:'#e5e9f0' },
+                ticks: { color:'#e5e9f0' },
+                grid: { color:'#23272f' },
+                beginAtZero: true,
+                max: nTrials3
+            }
+            },
+            plugins: {
+            legend: { display:false } // hide legend for clarity
+            }
+        }
+        });
+
+        /* ----------  End of cumulative sign plot ---------- */
+
+
+        /* ---------- 2. Gaussian-like smoothed distributions ---------- */
+        const trialSizes = [10, 100, 1000];
+        const colorsGaussian = [
+        'rgba(255,99,132,0.9)',
+        'rgba(75,192,192,0.9)',
+        'rgba(0,255,208,0.9)'
+        ];
+        const runsPerSet = 1000;
+        const trueP3 = 0.5; // ✅ define the true probability for this section
+
+        function simulateRelativeFreq(n, runs = 800) {
+        const arr = [];
+        for (let r = 0; r < runs; r++) {
+            let s = 0;
+            for (let i = 0; i < n; i++) if (Math.random() < trueP3) s++;
+            // Add small jitter to make values look continuous
+            const jitter = (Math.random() - 0.5) / n;
+            arr.push(Math.min(1, Math.max(0, s / n + jitter)));
+        }
+        return arr;
+        }
+
+        function smoothHistogram(data, bins = 120) {
+        const min = 0, max = 1, step = (max - min) / bins;
+        const counts = Array(bins).fill(0);
+        data.forEach(v => {
+            const idx = Math.min(bins - 1, Math.floor((v - min) / step));
+            counts[idx]++;
+        });
+        const total = data.length * step;
+        // mild moving-average smoothing
+        const density = counts.map(c => c / total);
+        for (let i = 1; i < density.length - 1; i++) {
+            density[i] = (density[i - 1] + density[i] + density[i + 1]) / 3;
+        }
+        return density;
+        }
+
+        // ✅ use unique variable names to avoid conflicts
+        const labelsGaussian = Array.from({ length: 120 }, (_, i) => (i / 120).toFixed(2));
+        const datasetsGaussian = trialSizes.map((n, idx) => {
+        const sim = simulateRelativeFreq(n, runsPerSet);
+        const smooth = smoothHistogram(sim);
+        return {
+            label: `n = ${n}`,
+            data: smooth,
+            borderColor: colorsGaussian[idx],
+            backgroundColor: colorsGaussian[idx].replace('0.9', '0.25'),
+            borderWidth: 2,
+            tension: 0.25,
+            fill: false,
+            pointRadius: 0
+        };
+        });
+
+        new Chart(document.getElementById('gaussianTrendChart').getContext('2d'), {
+        type: 'line',
+        data: { labels: labelsGaussian, datasets: datasetsGaussian },
+        options: {
+            scales: {
+            x: {
+                title: { display: true, text: 'Relative frequency (fₙ)', color: '#e5e9f0' },
+                ticks: { color: '#e5e9f0', maxRotation: 0 },
+                grid: { color: '#23272f' }
+            },
+            y: {
+                title: { display: true, text: 'Density (approx. Gaussian)', color: '#e5e9f0' },
+                ticks: { color: '#e5e9f0' },
+                grid: { color: '#23272f' },
+                beginAtZero: true
+            }
+            },
+            plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            tooltip: {
+                callbacks: {
+                label: (c) => ` ${c.dataset.label}: ${c.parsed.y.toFixed(3)}`
+                }
+            }
+            }
+        }
+        });
+
+    </script>
+    <!-- ===== END EXTENDED LLN SECTION ===== -->
+
+    <!-- ===== EXTENSION: Convergence Sign & Gaussian Bell ===== -->
+
+    <script>
+      const ctxLine = document.getElementById('llnLineChart').getContext('2d');
+      const trueP = 0.5, nTrials = 1000, runs = 1000;
+      let freqHistory = [], trialIndex = [];
+
+      const lineChart = new Chart(ctxLine, {
+        type: 'line',
+        data: { labels: [], datasets: [{
+          label: 'Relative cumulative frequency (fₙ)',
+          data: [],
+          borderColor: 'rgba(0,255,208,0.9)',
+          backgroundColor: 'rgba(0,255,208,0.25)',
+          borderWidth: 2,
+          tension: 0.15,
+          pointRadius: 0
+        }]},
+        options: {
+          animation: false,
+          scales: {
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true, max: 1 }
+          },
+          plugins: { legend: { labels: { color: '#e5e9f0' } } }
+        }
+      });
+
+      function simulateLLN() {
+        let successes = 0;
+        let lineData = [];
+        trialIndex = [];
+        for (let i = 1; i <= nTrials; i++) {
+          if (Math.random() < trueP) successes++;
+          const freq = successes / i;
+          lineData.push(freq);
+          trialIndex.push(i);
+        }
+        freqHistory = lineData;
+      }
+
+      function animateLLN() {
+        simulateLLN();
+        let i = 0;
+        const interval = setInterval(() => {
+          if (i >= nTrials) {
+            clearInterval(interval);
+            simulateHistogram();
+            return;
+          }
+          lineChart.data.labels.push(trialIndex[i]);
+          lineChart.data.datasets[0].data.push(freqHistory[i]);
+          lineChart.update();
+          i += 2;
+        }, 15);
+      }
+
+      function simulateHistogram() {
+        const finalFreqs = [];
+        for (let r = 0; r < runs; r++) {
+            let succ = 0;
+            for (let i = 1; i <= nTrials; i++) {
+            if (Math.random() < trueP) succ++;
+            }
+            finalFreqs.push(succ / nTrials);
+        }
+
+        // Count how many runs ended below or above 0.5
+        const below = finalFreqs.filter(f => f < trueP).length;
+        const above = finalFreqs.filter(f => f >= trueP).length;
+
+        const belowPerc = ((below / runs) * 100).toFixed(1);
+        const abovePerc = ((above / runs) * 100).toFixed(1);
+
+        // Update the text output
+        document.getElementById("finalCounts").innerHTML = `
+            <strong>Results after ${runs} simulations:</strong><br>
+            <strong>• Below 0.5: ${below} runs (${belowPerc}%)</strong><br>
+            <strong>• Above 0.5: ${above} runs (${abovePerc}%)</strong>
+        `;
+    }
+
+    animateLLN();
+    </script>
+    <br>
+    <hr class="section-sep">
+    <br>
+    <h2>Homework 4 — Euler’s Theorem & RSA Encoding</h2>
+    <p>
+      Euler’s theorem states that for any integer \( a \) coprime with \( n \):  
+      \( a^{\varphi(n)} \equiv 1 \pmod{n} \)  
+      This is the mathematical foundation of RSA encryption.
+    </p>
+
+    <div class="formula">
+      <p>\( n = p \times q, \quad \varphi(n) = (p-1)(q-1) \)</p>
+      <p>\( e \times d \equiv 1 \pmod{\varphi(n)} \)</p>
+      <p>\( c \equiv m^e \pmod{n}, \quad m \equiv c^d \pmod{n} \)</p>
+    </div>
+
+    <div class="callout">
+      <h3>Small-number example</h3>
+      <p>Let \( p = 17, q = 23, e = 3 \). Then \( n = 391, \varphi(n) = 352 \).</p>
+      <p>Compute \( d \) such that \( e \times d \equiv 1 \pmod{352} \): here \( d = 235 \).</p>
+    </div>
+
+    <h3>Encryption of “HiMyNameIsVincenzoNiceToMeetYou”</h3>
+    <canvas id="rsaChart" height="200"></canvas>
+    <p class="muted">Each letter is converted to its numeric code (A=1, B=2, ... Z=26), encrypted modulo 391, and shown below.</p>
+
+    <div class="codebox">
+      <pre><code class="language-javascript">const p = 17, q = 23;
+const n = p * q;          // 391
+const phi = (p - 1) * (q - 1);  // 352
+const e = 3;
+const d = 235;            // modular inverse of 3 mod 352
+const text = "“HiMyNameIsVincenzoNiceToMeetYou”";
+
+function modExp(base, exp, mod){
+  let r = 1n, b = BigInt(base), e = BigInt(exp), m = BigInt(mod);
+  while (e > 0n){ if (e & 1n) r = (r * b) % m; b = (b*b)%m; e >>= 1n; }
+  return r;
+}</code></pre>
+    </div>
+
+    <h3>Decrypted text</h3>
+    <div class="formula">
+      <p>\( m = c^d \bmod n \Rightarrow \) recovered message = “HiMyNameIsVincenzoNiceToMeetYou”</p>
+    </div>
+
+    <hr class="section-sep">
+
+    <h3>Attempt to Decode using a Reference Distribution</h3>
+    <p>
+    In classical ciphers, statistical frequency analysis allows us to recover plaintexts by comparing
+    symbol distributions to known language models. For instance, 'E' is the most common letter in English.
+    However, in RSA encryption, modular exponentiation destroys all frequency information.
+    Each ciphertext value is uniformly distributed over the modular field, regardless of the underlying message.
+    </p>
+
+    <p>
+    To demonstrate, we can compute and plot the frequency distribution of the encrypted letters from
+    “HiMyNameIsVincenzoNiceToMeetYou”, and compare it to the plaintext distribution.
+    </p>
+
+    <canvas id="rsaFreqChart" height="180"></canvas>
+
+    <script>
+      const rsaCtx = document.getElementById('rsaChart').getContext('2d');
+      const text = "HiMyNameIsVincenzoNiceToMeetYou";
+      const mapNum = ch => ch.toUpperCase().charCodeAt(0) - 64;
+      const nums = [...text].map(mapNum);
+      const p = 17, q = 23, n = p*q, phi = (p-1)*(q-1), e = 3, d = 235;
+
+      function modExp(base, exp, mod){
+        let r = 1n, b = BigInt(base), eBig = BigInt(exp), m = BigInt(mod);
+        while(eBig > 0n){
+          if (eBig & 1n) r = (r*b) % m;
+          b = (b*b) % m;
+          eBig >>= 1n;
+        }
+        return Number(r);
+      }
+
+      const ciphertext = nums.map(x => modExp(x, e, n));
+      const decrypted = ciphertext.map(c => modExp(c, d, n));
+
+      new Chart(rsaCtx, {
+        type: 'bar',
+        data: {
+          labels: text.split(''),
+          datasets: [{
+            label: 'Ciphertext value (c = m^e mod n)',
+            data: ciphertext,
+            backgroundColor: 'rgba(0,255,208,0.4)',
+            borderColor: 'rgba(0,255,208,0.9)',
+            borderWidth: 1.5,
+            borderRadius: 6
+          }]
+        },
+        options: {
+          plugins: { legend: { labels: { color: '#e5e9f0' } } },
+          scales: {
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true }
+          }
+        }
+      });
+
+      console.log("Ciphertext:", ciphertext);
+      console.log("Decrypted:", decrypted);
+    </script>
+
+    <script>
+    // Compare plaintext vs ciphertext frequency distributions
+    const plaintextLetters = text.toUpperCase().replace(/[^A-Z]/g, '').split('');
+    const countsPlain = {};
+    const countsCipher = {};
+
+    plaintextLetters.forEach(ch => countsPlain[ch] = (countsPlain[ch] || 0) + 1);
+    ciphertext.forEach(c => countsCipher[c] = (countsCipher[c] || 0) + 1);
+
+    new Chart(document.getElementById('rsaFreqChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+        labels: Object.keys(countsPlain),
+        datasets: [
+            {
+            label: 'Plaintext letter frequency',
+            data: Object.values(countsPlain),
+            backgroundColor: 'rgba(75,192,192,0.5)',
+            borderColor: 'rgba(75,192,192,0.9)',
+            borderWidth: 1.2
+            },
+            {
+            label: 'Ciphertext value frequency',
+            data: Object.values(countsCipher),
+            backgroundColor: 'rgba(255,99,132,0.5)',
+            borderColor: 'rgba(255,99,132,0.9)',
+            borderWidth: 1.2
+            }
+        ]
+        },
+        options: {
+        scales: {
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true }
+        },
+        plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            title: {
+            display: true,
+            text: 'Plaintext vs Ciphertext Distribution Comparison',
+            color: '#e5e9f0'
+            }
+        }
+        }
+    });
+    </script>
+
+    <hr class="section-sep">
+
+    <h3>Decoding small-number RSA by factorization</h3>
+    <p>
+    When using small numbers, RSA encryption can be reversed by simply factoring the modulus \( n \).
+    For example, if \( n = 391 \), we can find its prime factors \( p = 17 \) and \( q = 23 \),
+    then compute \( \varphi(n) = (p-1)(q-1) = 352 \) and derive the private key \( d \)
+    such that \( e \times d \equiv 1 \pmod{352} \). 
+    Using this value of \( d \), we can decrypt any ciphertext \( c \) with \( m = c^d \bmod n \).
+    </p>
+
+    <div class="codebox">
+    <pre><code class="language-javascript">
+    // Factorization-based RSA decoding (for small numbers)
+    const n = 391;               // public modulus
+    const e = 3;                 // public exponent
+    const p = 17, q = 23;        // factors of n
+    const phi = (p - 1) * (q - 1);
+    const d = 235;               // private key (modular inverse of 3 mod 352)
+    const ciphertextSample = 103; // example ciphertext
+
+    // decrypt manually
+    function modExp(base, exp, mod) {
+    let r = 1n, b = BigInt(base), eBig = BigInt(exp), m = BigInt(mod);
+    while (eBig > 0n) {
+        if (eBig & 1n) r = (r * b) % m;
+        b = (b * b) % m;
+        eBig >>= 1n;
+    }
+    return Number(r);
+    }
+
+    const decoded = modExp(ciphertextSample, d, n);
+    console.log("Decoded value:", decoded);
+    </code></pre>
+    </div>
+
+    <p class="note">
+    This demonstrates that with small moduli, RSA encryption is mathematically reversible through factorization,
+    unlike real-world RSA, which uses moduli of 2048 bits or more to make this computation infeasible.
+    </p>
+
+    <hr class="section-sep">
+
+    <h3>Decoding the Sample Text by Enumerating All Possible Ciphertexts</h3>
+    <p>
+    If encryption is performed <strong>letter by letter</strong> using small numbers, 
+    the message can be retrieved without the private key. 
+    Since each plaintext letter corresponds to a number \( m \in [1, 26] \), 
+    we can compute all possible ciphertexts \( c = m^e \bmod n \) and 
+    build a lookup table to reverse the process.
+    </p>
+
+    <div class="codebox">
+    <pre><code class="language-javascript">// Build mapping table for all letters
+    const letters = [...Array(26)].map((_, i) => String.fromCharCode(65 + i)); 
+    const letterValues = [...Array(26)].map((_, i) => i + 1);
+    const cipherValues = letterValues.map(m => Number(modExp(m, e, n)));
+
+    // Build lookup object for quick decoding
+    const lookup = {};
+    cipherValues.forEach((c, i) => lookup[c] = letters[i]);
+
+    // Decode the sample ciphertext
+    const decodedText = ciphertext.map(c => lookup[c] || '?').join('');
+    console.log("Decoded text:", decodedText);
+    </code></pre>
+    </div>
+
+    <p>
+    Below is the lookup table linking each letter to its ciphertext value, followed by the 
+    <strong>decoded version of “HiMyNameIsVincenzoNiceToMeetYou”</strong>.
+    </p>
+
+    <canvas id="rsaLookupChart" height="220"></canvas>
+    <p id="decodedOutput" style="text-align:center; font-size:1.1rem; margin-top:1rem; color:var(--accent);"></p>
+
+    <script>
+    // Build lookup table for A–Z
+    const letters = [...Array(26)].map((_, i) => String.fromCharCode(65 + i)); // A–Z
+    const letterValues = [...Array(26)].map((_, i) => i + 1);
+    const cipherValues = letterValues.map(m => Number(modExp(m, e, n)));
+
+    // Mapping for quick decoding
+    const lookup = {};
+    cipherValues.forEach((c, i) => lookup[c] = letters[i]);
+
+    // Decode the sample ciphertext
+    const decodedText = ciphertext.map(c => lookup[c] || '?').join('');
+
+    // Display the lookup table visually
+    new Chart(document.getElementById('rsaLookupChart').getContext('2d'), {
+        type: 'bar',
+        data: {
+        labels: letters,
+        datasets: [{
+            label: 'Ciphertext (c = m^e mod n)',
+            data: cipherValues,
+            backgroundColor: 'rgba(0,255,208,0.4)',
+            borderColor: 'rgba(0,255,208,0.9)',
+            borderWidth: 1.5,
+            borderRadius: 6
+        }]
+        },
+        options: {
+        scales: {
+            x: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' } },
+            y: { ticks: { color: '#e5e9f0' }, grid: { color: '#23272f' }, beginAtZero: true }
+        },
+        plugins: {
+            legend: { labels: { color: '#e5e9f0' } },
+            title: {
+            display: true,
+            text: 'RSA Mapping Between Letters and Ciphertexts (n = 391, e = 3)',
+            color: '#e5e9f0'
+            }
+        }
+        }
+    });
+
+    // Show the decoded text on the page
+    document.getElementById("decodedOutput").innerHTML = 
+        `<strong>Decoded message:</strong> ${decodedText}`;
+    </script>
+
+    <p class="note">
+    Because the input space (A–Z) is so small, and the encryption uses small numbers, every ciphertext value is predictable and unique. 
+    By computing all 26 ciphertexts in advance, we can directly reverse the encryption. 
+    This demonstrates why real RSA implementations use large key sizes and block-based encoding 
+    to avoid such easy reversibility.
+    </p>
+
+    <hr class="section-sep">
+
+    <h3>Summary</h3>
+    <p class="note">
+        In the <strong>Law of Large Numbers</strong> experiment, the relative cumulative frequency \( f_n \)  
+        equivalent to the empirical probability \( p_n \) converged toward the true probability \( p = 0.5 \) 
+        as the number of trials increased, illustrating how randomness averages out over time.  
+        <br><br>
+        In the <strong>RSA encryption</strong> part, Euler’s theorem ensured that encryption and decryption 
+        are inverse operations modulo \( n \). However, the <em>attempt to decode using a reference distribution</em> 
+        showed that frequency analysis, which works for classical ciphers, fails completely in RSA since 
+        modular exponentiation destroys all statistical patterns.  
+        <br><br>
+        Finally, the <strong>decoding by enumeration</strong> experiment demonstrated that because this simplified 
+        RSA version encrypts <em>each letter individually</em> using small numeric values, the cipher can be 
+        reversed by precomputing all possible ciphertexts \( c = m^e \bmod n \). This highlights that the 
+        security of real RSA systems depends not only on large prime moduli but also on encoding entire 
+        message blocks instead of single characters.
+    </p>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+</body>
+</html>
