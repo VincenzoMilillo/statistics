@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Homework 4 — Online Mean, Variance, and Streaming Algorithms</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw4.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\\[','\\]'], ['$$','$$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a class="active" href="hmw4.html">Homework 7 (todo)</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- PART 2 — ONLINE FORMULAS -->
+    <section>
+      <h2>Online formulas for mean and variance</h2>
+      <p class="muted">
+        Classical formulas for mean and variance require two passes through the dataset and store all observations.
+        Online formulas allow us to update these statistics incrementally as new data arrives, using only constant memory.
+      </p>
+      <br>
+      <h3>Online mean</h3>
+      <div class="formula">
+        <p>Let \( \mu_n \) be the mean of the first \( n \) observations. When a new value \( x_n \) arrives:</p>
+        <p>\[ \mu_n = \mu_{n-1} + \frac{x_n - \mu_{n-1}}{n}. \]</p>
+      </div>
+        <br>
+      <h3>Online variance (Welford’s method)</h3>
+      <div class="formula">
+        <p>
+          Maintain the count \( n \), the running mean \( m \), and the accumulated sum \( M_2 = \sum_{i=1}^{n} (x_i - m)^2 \).
+          Each time a new data point \( x_n \) arrives:
+        </p>
+        <p class="break-lines">
+          \( \delta = x_n - m \)  
+          \( m \leftarrow m + \frac{\delta}{n} \)  
+          \( M_2 \leftarrow M_2 + \delta\,(x_n - m) \)
+        </p>
+        <p>
+          Then, the <em>population variance</em> is \( \sigma^2 = M_2 / n \), and the <em>sample variance</em> is \( s^2 = M_2 / (n-1) \).
+        </p>
+      </div>
+
+      <br>
+      <h3>Welford's Online Algorithm for Mean and Variance</h3>
+      <h4>Computes running mean and variance in one pass without storing all data</h4>
+
+      <div class="codebox">
+<pre><code class="language-python"># Computes running mean and variance in one pass without storing all data.
+
+class OnlineStats:
+    def __init__(self):
+        self.n = 0          # number of values seen
+        self.mean = 0.0     # running mean
+        self.M2 = 0.0       # sum of squares of deviations from the mean
+
+    def push(self, x):
+        # Process a new value x
+        self.n += 1
+        delta = x - self.mean
+        self.mean += delta / self.n
+        delta2 = x - self.mean
+        self.M2 += delta * delta2
+
+    @property
+    def mean_value(self):
+        # Current mean
+        return self.mean
+
+    @property
+    def variance_sample(self):
+        # Sample variance (unbiased)
+        return (self.M2 / (self.n - 1)) if self.n > 1 else 0.0
+
+# --- Example usage ---
+s = OnlineStats()
+for v in [2, 4, 4, 4, 5, 5, 7, 9]:
+    s.push(v)
+
+print("Mean:", round(s.mean_value, 3))
+print("Sample variance:", round(s.variance_sample, 3))
+</code></pre>
+      </div>
+      <br>
+      <div>
+        <h3>Explanation</h3>
+        <p>
+          This Python class implements <strong>Welford’s algorithm</strong>, which updates the mean and variance
+          <em>incrementally</em> as new data arrives.
+          It uses only three variables: <code>n</code> (count), <code>mean</code>, and <code>M2</code> (sum of squares of differences).
+        </p>
+        <ul style="text-align:left; display:inline-block;">
+          <li><code>push(x)</code> adds one observation and updates all statistics.</li>
+          <li><code>mean_value</code> returns the current running mean.</li>
+          <li><code>variance_sample</code> returns the sample variance using \( n - 1 \) in the denominator.</li>
+        </ul>
+        <p>
+          The algorithm is <strong>numerically stable</strong> and requires only <strong>O(1) memory</strong>, making it ideal for
+          streaming data, IoT sensors, and real-time analytics.
+        </p>
+      </div>
+        <br>
+      <div class="callout">
+        <h3>Example Input and Output</h3>
+<pre><code>Input data: [2, 4, 4, 4, 5, 5, 7, 9]
+
+Output:
+Mean: 5.0
+Sample variance: 4.571</code></pre>
+        <p class="muted">
+          The same result you would obtain using the traditional batch formulas,
+          but computed in a single pass and with constant memory.
+        </p>
+      </div>
+        <br>
+        <hr class="section-sep">
+        <br>
+      <h3>Equivalence of Online and Classical Formulas</h3>
+        <p class="muted">
+        In statistical computation, both <em>batch</em> and <em>online</em> approaches aim to estimate the same quantities — 
+        the true mean and variance of a dataset. The difference lies not in the result, but in <strong>how</strong> 
+        the information is processed.
+        </p>
+
+        <div class="callout">
+        <h3>Conceptual comparison</h3>
+        <ul style="text-align:left; display:inline-block;">
+            <li>
+            <strong>Classical (batch) approach:</strong>  
+            Requires storing the entire dataset, computing the total sum and sum of squared deviations.  
+            It achieves high precision but uses significant memory and at least two passes through the data.
+            </li>
+            <li>
+            <strong>Online (incremental) approach:</strong>  
+            Updates the mean and variance with each observation, using constant memory.  
+            Mathematically, it produces <em>identical results</em> to the batch method up to rounding error,
+            since both derive from the same expectation identities:
+            \[
+                E[X] = \frac{1}{n}\sum x_i, \quad Var(X) = E[X^2] - (E[X])^2.
+            \]
+            </li>
+        </ul>
+        </div>
+        <br>
+        <div>
+        <h3>Numerical stability in practice</h3>
+        <p>
+            When data values are very large or very small, subtracting two nearly equal sums can cause 
+            <strong>catastrophic cancellation</strong> in the classical variance formula.  
+            Welford’s method avoids this by updating deviations incrementally, preserving precision even for 
+            high-dimensional or streaming datasets.
+        </p>
+        <p class="muted">
+            This stability makes online algorithms particularly valuable in finance, IoT, or cybersecurity applications, 
+            where continuous data must be processed in real time without numerical drift.
+        </p>
+        </div>
+        <br>
+        <div class="callout">
+        <h3>Illustration Example</h3>
+        <p>
+            Suppose we compute the mean and variance of one million random values using both methods.  
+            The results differ only in the order of <code>10⁻¹⁵</code> due to floating-point rounding:
+        </p>
+        <pre><code>Batch method → mean = 0.001234, variance = 4.985201  
+        Online method → mean = 0.001234, variance = 4.985201</code></pre>
+        <p class="muted">
+            This shows that online algorithms maintain accuracy while drastically reducing computational cost and memory use.
+        </p>
+        </div>
+        <br>
+        <h3>Graphical comparison of Batch vs Online Mean</h3>
+        <p class="muted">
+        The chart below visualises how the <strong>online mean</strong> converges towards the 
+        <strong>batch mean</strong> as more data points are processed.  
+        Both lines approach the same value, demonstrating that the online algorithm 
+        achieves equivalent accuracy while updating in real time.
+        </p>
+
+        <canvas id="comparisonChart" height="260"></canvas>
+
+        <script>
+        // Wait until page fully loads
+        document.addEventListener("DOMContentLoaded", () => {
+
+        // Simulate random data stream
+        const N = 500;
+        const data = Array.from({length: N}, () => Math.random() * 10 - 5);
+
+        // Batch mean after all data
+        const batchMean = data.reduce((a,b)=>a+b,0) / data.length;
+
+        // Online mean evolution
+        let onlineMean = 0;
+        const onlineMeans = [];
+        const batchMeans = [];
+
+        data.forEach((x, i) => {
+            onlineMean += (x - onlineMean) / (i + 1);
+            onlineMeans.push(onlineMean);
+            batchMeans.push(batchMean);
+        });
+
+        // Build chart
+        const ctx = document.getElementById("comparisonChart").getContext("2d");
+        new Chart(ctx, {
+            type: "line",
+            data: {
+            labels: Array.from({length: N}, (_, i) => i + 1),
+            datasets: [
+                {
+                label: "Online mean (Welford)",
+                data: onlineMeans,
+                borderColor: "rgba(0,255,208,0.9)",
+                backgroundColor: "rgba(0,255,208,0.2)",
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.12
+                },
+                {
+                label: "Batch mean (reference)",
+                data: batchMeans,
+                borderColor: "rgba(75,127,255,0.9)",
+                backgroundColor: "rgba(75,127,255,0.25)",
+                borderDash: [5,5],
+                borderWidth: 2,
+                pointRadius: 0,
+                tension: 0.12
+                }
+            ]
+            },
+            options: {
+            animation: false,
+            plugins: { 
+                legend: { labels: { color: "#e5e9f0" } } 
+            },
+            scales: {
+                x: {
+                title: { display: true, text: "Number of samples", color: "#a8b3c6" },
+                ticks: { color: "#e5e9f0" },
+                grid: { color: "#23272f" }
+                },
+                y: {
+                title: { display: true, text: "Mean value", color: "#a8b3c6" },
+                ticks: { color: "#e5e9f0" },
+                grid: { color: "#23272f" }
+                }
+            }
+            }
+        });
+        });
+        </script>
+
+
+    </section>
+    <br>
+    <hr class="section-sep">
+    <br>
+    <!-- PART 3 — STREAMING DEMO -->
+    <section>
+      <h3>Part 3 — Why online/streaming algorithms are computationally superior</h3>
+      <br>
+      <div class="callout">
+        <h3>Key advantages</h3>
+        <p><strong>O(1) memory.</strong> Keep only \( n \), \( m \), and \( M_2 \) instead of all \( x_i \).</p>
+        <p><strong>One pass over the data.</strong> No rescans, no temporary arrays → lower I/O.</p>
+        <p><strong>Numerical stability.</strong> Welford’s algorithm avoids catastrophic cancellation in “sum-of-squares”.</p>
+        <p><strong>Streaming-ready.</strong> Works with unbounded or real-time data flows.</p>
+        <p><strong>Parallel-friendly.</strong> Partial statistics can be merged (Chan–Golub–LeVeque / Pébay formulas).</p>
+        <p><strong>Cache-efficient.</strong> Tiny state fits into CPU cache → faster computation.</p>
+      </div>
+
+      <br>
+      <h3>Visual demonstration: live mean and variance in a data stream</h3>
+      <canvas id="onlineChart" height="240"></canvas>
+      <p class="muted">
+        The chart displays a simulated data stream. The <strong>green line</strong> represents the online mean, while the <strong>blue shaded area</strong>
+        shows ±1 standard deviation, updating dynamically as new data arrives.
+      </p>
+
+      <script>
+        class OnlineStats {
+          constructor(){ this.n = 0; this.mean = 0; this.M2 = 0; }
+          push(x){
+            this.n += 1;
+            const delta = x - this.mean;
+            this.mean += delta / this.n;
+            const delta2 = x - this.mean;
+            this.M2 += delta * delta2;
+          }
+          get meanValue(){ return this.mean; }
+          get varianceSample(){ return this.n > 1 ? this.M2 / (this.n - 1) : 0; }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+          const ctx = document.getElementById('onlineChart').getContext('2d');
+          const s2 = new OnlineStats();
+          const xs = [], mus = [], lo = [], hi = [];
+          let t = 0;
+          const chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: xs, datasets: [
+              { label: 'Online mean', data: mus, borderColor: 'rgba(0,255,208,0.9)', 
+                backgroundColor: 'rgba(0,255,208,0.25)', borderWidth: 2, pointRadius: 0, tension: 0.12, fill: false },
+              { label: '±1 sd band', data: lo, borderColor: 'rgba(75,127,255,0.0)', 
+                backgroundColor: 'rgba(75,127,255,0.18)', borderWidth: 0, pointRadius: 0, tension: 0.12, fill: '+1' },
+              { label: '', data: hi, borderColor: 'rgba(75,127,255,0.0)', 
+                backgroundColor: 'rgba(75,127,255,0.18)', borderWidth: 0, pointRadius: 0, tension: 0.12, fill: false }
+            ]},
+            options: {
+              animation: false,
+              plugins: { legend: { labels: { color: '#e5e9f0' } } },
+              scales: {
+                x: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } },
+                y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } }
+              }
+            }
+          });
+
+          function step(){
+            const x = Math.sin(t/25) + (Math.random()-0.5)*0.7;
+            s2.push(x);
+            const sd = Math.sqrt(s2.varianceSample || 0);
+            xs.push(t);
+            mus.push(s2.meanValue);
+            lo.push(s2.meanValue - sd);
+            hi.push(s2.meanValue + sd);
+            chart.update();
+            t += 1;
+            if (t < 300) requestAnimationFrame(step);
+          }
+          step();
+        });
+      </script>
+
+    <br>
+
+    <div class="callout">
+        <h3>Interpretation of the Chart</h3>
+        <p>
+          The <strong>green line</strong> tracks the running mean, adapting smoothly as data changes.
+          The <strong>blue band</strong> represents ±1 standard deviation, widening when variability increases and narrowing when data stabilises.
+        </p>
+        <p>
+          This simulation highlights the <strong>efficiency and stability</strong> of online algorithms:
+          accurate statistics are obtained in one pass using minimal memory.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+</body>
+</html>

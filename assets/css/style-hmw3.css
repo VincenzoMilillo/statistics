@@ -1,0 +1,222 @@
+/* --------------------------------------------
+   Homework 4 – Averages & Online Algorithms
+   Custom stylesheet (dark, clean, mono)
+   -------------------------------------------- */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #181c20;
+  --surface: #23272f;
+  --surface-2: #1e2229;
+  --accent: #00ffd0;
+  --accent2: #4b7fff;
+  --text: #e5e9f0;
+  --muted: #7c8da4;
+  --radius: 12px;
+  --shadow: 0 2px 12px 0 #0008;
+  --font: 'JetBrains Mono', monospace;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 18px;
+  min-height: 100vh;
+  scroll-behavior: smooth;
+}
+
+body { margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* Header */
+header {
+  background: var(--surface);
+  padding: 2rem 1rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 1px solid #222;
+  text-align: center;
+}
+header h1 { margin: 0; font-size: 2rem; color: var(--accent); }
+
+nav { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+nav a {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.4rem 1rem;
+  background: var(--surface);
+}
+nav a:hover { color: var(--accent); border: 1px solid var(--accent); background: var(--surface-2); }
+nav a.active { color: var(--accent); border: 1px solid var(--accent); box-shadow: inset 0 0 0 1px #00ffd04d; }
+
+/* Main */
+main { flex: 1; padding: 2rem 1rem; max-width: 900px; margin: 0 auto; text-align: center; }
+h2, h3 { color: var(--accent); margin: 0 0 1rem 0; }
+p { line-height: 1.7; margin: 0 0 1rem 0; }
+strong { color: var(--accent2); }
+em { color: var(--muted); }
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid #20242b;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: .5rem 0 1rem;
+}
+thead th {
+  background: var(--surface-2);
+  color: var(--text);
+  text-align: left;
+  padding: .75rem .9rem;
+  border-bottom: 1px solid #2a2f38;
+  position: sticky; top: 0;
+}
+tbody td { padding: .7rem .9rem; border-bottom: 1px solid #2a2f38; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: #1c2026; }
+td:nth-child(2) { font-variant-numeric: tabular-nums; }
+
+/* Solo quella tabella più larga, anche oltre il main */
+.table-wrap.wide {
+  /* esce dai limiti del main e si estende a tutta la viewport */
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+}
+
+/* larghezza reale della tabella: centrata e più larga del solito */
+.table-wrap.wide > table {
+  width: min(1400px, 100vw);   /* cambia 1400px se la vuoi ancora più larga */
+  margin: 0 auto;
+  font-size: 1.06rem;          /* opzionale: testo un filo più grande */
+}
+
+.table-wrap.wide thead th,
+.table-wrap.wide tbody td {
+  padding: 1rem 1.2rem;        /* opzionale: celle più spaziose */
+}
+
+/* --- Fix allineamento header tabella --- */
+
+/* Centra verticalmente tutto (th e td) */
+.table-wrap thead th,
+.table-wrap tbody td {
+  vertical-align: middle;
+}
+
+/* Header più pulito: stessa altezza riga e padding */
+.table-wrap thead th {
+  line-height: 1.25;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* Le formule MathJax in celle: niente baseline “strana” */
+.table-wrap th .mjx-container,
+.table-wrap td .mjx-container {
+  display: inline-block;      /* evita lo shift della baseline */
+  vertical-align: middle;     /* centra rispetto al testo */
+}
+
+/* (Opzionale) centratura orizzontale solo dei titoli, lasciando il body a sinistra */
+.table-wrap thead th { text-align: center; }
+.table-wrap tbody td { text-align: left; }
+
+/* (Opzionale) larghezze più stabili per le tre colonne */
+.table-wrap thead th:nth-child(1) { width: 12rem; }
+.table-wrap thead th:nth-child(2) { width: 28rem; }
+.table-wrap thead th:nth-child(3) { width: 30rem; }
+
+/* Charts */
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: linear-gradient(180deg, #1a1f26 0%, #171b20 100%);
+  border: 1px solid #20242b;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: .5rem 0 1rem;
+}
+
+/* Code boxes */
+.codebox {
+  background: #11161b;
+  border: 1px solid #20242b;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px #0008;
+  padding: 1rem 1.1rem;
+  max-width: 860px;
+  margin: .75rem auto 1rem;
+  text-align: left;
+}
+.codebox pre { margin: 0; overflow-x: auto; white-space: pre; }
+.codebox code {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #e5e9f0;
+}
+
+/* Callout & formula */
+.callout, .formula {
+  background: #10161c;
+  border: 1px solid #22303b;
+  border-left: 4px solid var(--accent2);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 2px 10px #0006;
+  text-align: center;
+  max-width: 860px;
+  margin: 0 auto 1.25rem;
+}
+.callout h3 { color: var(--accent); margin: 0 0 .5rem 0; }
+.formula code {
+  background: #0f1318;
+  padding: .08rem .35rem;
+  border-radius: 6px;
+  border: 1px solid #1f232b;
+}
+.break-lines { white-space: pre-line; }
+
+/* Utilities */
+.section-sep {
+  border: 0;
+  height: 1px;
+  width: 100%;
+  max-width: 860px;
+  margin: 2rem auto 2rem;
+  background: linear-gradient(90deg, transparent, #2a3540, transparent);
+}
+
+/* Refs */
+.refs { text-align: left; max-width: 860px; margin: 0 auto; }
+.refs li { margin: .4rem 0; }
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1.2rem 0 1rem 0;
+  background: #181c20;
+  color: var(--muted);
+  font-size: 0.9rem;
+  border-top: 1px solid #222;
+  opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  main { padding: 1rem .8rem; font-size: 1rem; }
+  header h1 { font-size: 1.6rem; }
+}

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Homework 4 — Averages, Mean, and Dispersion Measures</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw3.css">
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']], displayMath: [['\\[','\\]'], ['$$','$$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a class="active" href="hmw4.html">Homework 6</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- PART 1 — LOCATION MEASURES -->
+    <section>
+      <h3>“Mean” and “Average”: useful variants and when to use them</h3>
+      <p class="muted">
+        Different “averages” answer different questions. Picking the right one depends on the
+        <em>data-generating process</em> and the <em>decision you need to make</em>.
+      </p>
+
+      <div class="table-wrap wide">
+        <table>
+          <thead>
+            <tr>
+              <th>Average</th>
+              <th>Definition</th>
+              <th>When it’s appropriate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Arithmetic mean</strong></td>
+              <td>\( \bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i \)</td>
+              <td>Summative effects: addends accumulate linearly (temperatures, points, latency).</td>
+            </tr>
+            <tr>
+              <td><strong>Weighted mean</strong></td>
+              <td>\( \bar{x}_w = \frac{\sum w_i x_i}{\sum w_i} \)</td>
+              <td>Unequal reliability/importance (survey weights, time-on-page weighting, portfolio returns).</td>
+            </tr>
+            <tr>
+              <td><strong>Geometric mean</strong></td>
+              <td>\( G = \big(\prod_{i=1}^{n} x_i\big)^{1/n} \)</td>
+              <td>Multiplicative/compound processes (growth rates, interest, ratios; works for positive values).</td>
+            </tr>
+            <tr>
+              <td><strong>Harmonic mean</strong></td>
+              <td>\( H = \frac{n}{\sum_{i=1}^{n} 1/x_i} \)</td>
+              <td>Rates with fixed “distance/task” (speed from time-per-unit, average price per share with fixed budget).</td>
+            </tr>
+            <tr>
+              <td><strong>Quadratic / RMS</strong></td>
+              <td>\( \text{RMS} = \sqrt{\frac{1}{n}\sum x_i^2} \)</td>
+              <td>Energy/variance-aware magnitudes (signal power, voltage, error magnitudes).</td>
+            </tr>
+            <tr>
+              <td><strong>Power mean</strong></td>
+              <td>\( M_p = \big(\frac{1}{n}\sum x_i^p\big)^{1/p} \)</td>
+              <td>Interpolates sensitivity to extremes: tune \(p\) to penalize/forgive outliers.</td>
+            </tr>
+            <tr>
+              <td><strong>Trimmed mean</strong></td>
+              <td>Arithmetic mean after removing the lowest/highest \( \alpha\% \) values.</td>
+              <td>Robust to outliers while keeping efficiency (service times with rare spikes).</td>
+            </tr>
+            <tr>
+              <td><strong>Winsorized mean</strong></td>
+              <td>Replace the extremes with nearest remaining values, then average.</td>
+              <td>Like trimmed mean but preserves sample size; robust reporting KPIs.</td>
+            </tr>
+            <tr>
+              <td><strong>Median</strong></td>
+              <td>Middle order statistic (or mean of the two middles).</td>
+              <td>Highly robust “typical” value (income, skewed latencies, heavy tails).</td>
+            </tr>
+            <tr>
+              <td><strong>Mode</strong></td>
+              <td>Most frequent value/category.</td>
+              <td>Categorical “average” (most common error code, snack type).</td>
+            </tr>
+            <tr>
+              <td><strong>Midrange</strong></td>
+              <td>\( (\min + \max)/2 \)</td>
+              <td>Very sensitive to outliers; ok for quick ranges/rough centering only.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <br>
+      <br>
+      <div class="callout">
+        <h3>Quick guide</h3>
+        <p><strong>Additive sums →</strong> arithmetic/weighted.</p>
+        <p><strong>Compounding ratios →</strong> geometric.</p>
+        <p><strong>Rates (time per unit) →</strong> harmonic.</p>
+        <p><strong>Outliers present →</strong> trimmed / winsorized / median.</p>
+      </div>
+    </section>
+
+    <br>
+    <hr class="section-sep">
+    <br>
+
+    <!-- PART 2 — DISPERSION MEASURES -->
+    <section>
+      <h3>Measures of Dispersion</h3>
+      <p class="muted">
+        Measures of dispersion indicate how much the data vary or spread around the central value. 
+        They are essential to understand data reliability, risk, and uncertainty.
+      </p>
+
+      <div class="table-wrap wide">
+        <table>
+          <thead>
+            <tr>
+              <th>Measure</th>
+              <th>Formula / Definition</th>
+              <th>When it’s appropriate</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Range</strong></td>
+              <td>\( \text{Range} = \max(x_i) - \min(x_i) \)</td>
+              <td>Gives total spread; easy to compute but highly sensitive to outliers.</td>
+            </tr>
+            <tr>
+              <td><strong>Interquartile Range (IQR)</strong></td>
+              <td>\( IQR = Q_3 - Q_1 \)</td>
+              <td>Describes the spread of the middle 50% of data; robust against outliers.</td>
+            </tr>
+            <tr>
+              <td><strong>Mean Absolute Deviation (MAD)</strong></td>
+              <td>\( MAD = \frac{1}{n}\sum |x_i - \bar{x}| \)</td>
+              <td>Average distance from the mean; less affected by extreme values than variance.</td>
+            </tr>
+            <tr>
+              <td><strong>Variance</strong></td>
+              <td>\( s^2 = \frac{1}{n-1}\sum (x_i - \bar{x})^2 \)</td>
+              <td>Measures average squared deviation; key in probabilistic and statistical models.</td>
+            </tr>
+            <tr>
+              <td><strong>Standard Deviation (SD)</strong></td>
+              <td>\( s = \sqrt{s^2} \)</td>
+              <td>Square root of variance; same units as data, easy to interpret.</td>
+            </tr>
+            <tr>
+              <td><strong>Mean Squared Error (MSE)</strong></td>
+              <td>\( MSE = \frac{1}{n}\sum (x_i - \hat{x}_i)^2 \)</td>
+              <td>Used in regression and machine learning to measure prediction accuracy.</td>
+            </tr>
+            <tr>
+              <td><strong>Coefficient of Variation (CV)</strong></td>
+              <td>\( CV = \frac{s}{\bar{x}} \times 100\% \)</td>
+              <td>Compares relative variability between datasets of different scales or units.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <br>
+      <br>
+
+      <div class="callout">
+        <h3>Interpretation</h3>
+        <p>
+          Dispersion measures help quantify <strong>uncertainty</strong> and <strong>stability</strong>. 
+          A small standard deviation means the data are tightly clustered around the mean; 
+          a large one indicates high variability or risk.
+        </p>
+      </div>
+    </section>
+
+    <br>
+    <hr class="section-sep">
+    <br>
+
+    <section>
+      <h3>References</h3>
+      <p class="note">
+        As <strong>John Rook</strong> said: <strong>"There is no single ‘average’ that suits every purpose; the choice depends on the question being asked and the nature of the data."</strong>
+      </p>
+      <ul class="refs">
+        <li><em>Rook, John</em>. <span class="muted"> Averages: the different kinds and when to use them. Teaching Statistics, 14 (2), 42–46.</span></li>
+        <li><em>Pébay, P.</em> (2008). Formulas for Robust, One-Pass Parallel Computation of Covariances and Arbitrary-Order Statistical Moments. Sandia Report SAND2008-6212.</li>
+        <li><em>Welford, B. P.</em> (1962). Note on a method for calculating corrected sums of squares and products. <em>Technometrics</em>, 4(3), 419–420.</li>
+        <li><em>Chan, T. F., Golub, G. H., &amp; LeVeque, R. J.</em> (1983). Algorithms for computing the sample variance. <em>The American Statistician</em>, 37(3), 242–247.</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+</body>
+</html>
