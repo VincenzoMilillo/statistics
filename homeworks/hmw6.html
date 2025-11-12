@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Homework 8 — Bernoulli Process vs Random Walk</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw6.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a class="active" href="hmw6.html">Homework 9 (todo)</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Homework 8 — Compare Bernoulli Process with Random Walk</h2>
+
+    <div class="callout">
+      <h3>Big picture</h3>
+      <p><strong>Bernoulli process:</strong> independent trials \(X_i\\in\\{0,1\\}\) with \(P(X_i=1)=p\).</p>
+      <p><strong>Random walk:</strong> steps \(Y_i\\in\\{-1,+1\\}\) with \(P(Y_i=+1)=q\). Setting \(Y_i=2X_i-1\) maps one to the other with \(q=p\).</p>
+      <p>Hence \(S_n = \\sum Y_i = 2 \\sum X_i - n\\). The distributions are the same up to an affine transformation.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="formula">
+        <p><strong>Binomial link.</strong> If \(K=\\sum_{i=1}^n X_i \\sim \\text{Binomial}(n,p)\), then</p>
+        <p>\(P(S_n = k) = P\\big(K=(n+k)/2\\big) = \\binom{n}{(n+k)/2} p^{(n+k)/2}(1-p)^{(n-k)/2}.\)</p>
+        <p>LLN: \(\\frac{K}{n} \\to p \\Rightarrow \\frac{S_n}{n} = 2\\frac{K}{n}-1 \\to 2p-1\\).</p>
+      </div>
+      <div class="formula">
+        <p><strong>Pascal (Tartaglia) & binomial expansion.</strong></p>
+        <p>Coefficients in \\((a+b)^n\\) are the entries of row \(n\) of Pascal’s triangle.</p>
+        <p>For a Bernoulli/Walk process: \(P(K=k) = \\binom{n}{k}p^k(1-p)^{n-k}\\), exactly the same algebra.</p>
+      </div>
+    </div>
+
+    <h3>Visual: Pascal’s triangle rows and binomial coefficients</h3>
+    <div id="triangle" class="triangle"></div>
+    <div class="mini center">Rows 0…10 of Pascal/Tartaglia (hover to see values)</div>
+
+    <h3>Distribution view: Binomial (K) vs. Random walk (Sₙ)</h3>
+    <canvas id="binomChart" height="220"></canvas>
+    <canvas id="walkChart" height="220"></canvas>
+
+    <h3>Side quest: Fibonacci</h3>
+    <div class="callout">
+      <p>Counting constrained paths often yields <strong>Fibonacci</strong> numbers. For instance, the number of ways to reach step \(n\) using steps of size 1 or 2 satisfies \(F_{n}=F_{n-1}+F_{n-2}\).</p>
+      <p>This is not the unconstrained \\(\{-1,+1\\}\\) random walk, but it shows how simple step rules induce famous recurrences.</p>
+    </div>
+    <canvas id="fibChart" height="200"></canvas>
+
+    <div class="codebox"><pre><code>// Relations
+// Y_i = 2 X_i - 1        (map Bernoulli to ±1 walk)
+// S_n = ∑ Y_i = 2 K - n  where K ~ Binomial(n,p)
+// LLN: K/n → p  ⇒ S_n/n → 2p-1
+// Pascal/Tartaglia gives the binomial coefficients that weight all paths with k successes.</code></pre></div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+
+  <script>
+    // ---- Pascal/Tartaglia small triangle (rows 0..10) ----
+    function comb(n,k){
+      if (k<0||k>n) return 0;
+      if (k===0||k===n) return 1;
+      let r=1;
+      for (let i=1;i<=k;i++) r = r*(n-k+i)/i;
+      return Math.round(r);
+    }
+    const triEl = document.getElementById('triangle');
+    for (let n=0;n<=10;n++){
+      const row = document.createElement('div'); row.className='row';
+      for (let k=0;k<=n;k++){
+        const v = comb(n,k);
+        const chip = document.createElement('span');
+        chip.className='chip';
+        chip.title = `C(${n},${k}) = ${v}`;
+        chip.textContent = v;
+        row.appendChild(chip);
+      }
+      triEl.appendChild(row);
+    }
+
+    // ---- Binomial vs Walk distributions ----
+    const n = 30, p = 0.35;
+    const labelsK = Array.from({length: n+1}, (_,k)=>k);
+    const probsK = labelsK.map(k => comb(n,k) * Math.pow(p,k) * Math.pow(1-p,n-k));
+    const ctxB = document.getElementById('binomChart').getContext('2d');
+    new Chart(ctxB, {
+      type: 'bar',
+      data: {
+        labels: labelsK.map(String),
+        datasets: [{
+          label: `Binomial(n=${n}, p=${p}) on K`,
+          data: probsK,
+          backgroundColor: 'rgba(75,127,255,0.35)',
+          borderColor: 'rgba(75,127,255,0.9)',
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color:'#e5e9f0' } } },
+        scales: {
+          x: { ticks: { color:'#e5e9f0', maxRotation:0 }, grid: { color:'#23272f' } },
+          y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero:true }
+        }
+      }
+    });
+
+    // Map to S_n = 2K - n (only same-parity k appear)
+    const labelsS = [];
+    const probsS = [];
+    for (let k=0;k<=n;k++){
+      const s = 2*k - n;
+      labelsS.push(s);
+      probsS.push(probsK[k]);
+    }
+    const ctxW = document.getElementById('walkChart').getContext('2d');
+    new Chart(ctxW, {
+      type: 'bar',
+      data: {
+        labels: labelsS.map(String),
+        datasets: [{
+          label: `Random-walk Sₙ distribution (via Sₙ=2K−n)`,
+          data: probsS,
+          backgroundColor: 'rgba(0,255,208,0.35)',
+          borderColor: 'rgba(0,255,208,0.95)',
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color:'#e5e9f0' } } },
+        scales: {
+          x: { ticks: { color:'#e5e9f0', maxRotation:0 }, grid: { color:'#23272f' } },
+          y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero:true }
+        }
+      }
+    });
+
+    // ---- Fibonacci quick visualization ----
+    function fibArr(N){
+      const a=[0,1];
+      for (let i=2;i<=N;i++) a[i]=a[i-1]+a[i-2];
+      return a;
+    }
+    const F = fibArr(14);
+    const ctxF = document.getElementById('fibChart').getContext('2d');
+    new Chart(ctxF, {
+      type: 'line',
+      data: {
+        labels: F.map((_,i)=>i),
+        datasets: [{
+          label: 'Fibonacci F_n (n=0..14)',
+          data: F,
+          borderColor: 'rgba(255,193,7,0.95)',
+          backgroundColor: 'rgba(255,193,7,0.25)',
+          borderWidth: 2,
+          tension: .15,
+          pointRadius: 2
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color:'#e5e9f0' } } },
+        scales: {
+          x: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, title: { display:true, text:'n', color:'#e5e9f0' } },
+          y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero:true }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

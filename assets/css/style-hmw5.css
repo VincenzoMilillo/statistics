@@ -1,0 +1,215 @@
+/* --------------------------------------------
+   Homework 7 – Penetration Score Random Walk
+   Personalized stylesheet (dark, clean, mono)
+   -------------------------------------------- */
+
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+  --bg: #181c20;
+  --surface: #23272f;
+  --surface-2: #1e2229;
+  --accent: #00f7a7;        /* greener cyber accent for "secure vs breach" */
+  --accent2: #29abe2;       /* cyan-blue secondary */
+  --text: #e5e9f0;
+  --muted: #7c8da4;
+  --radius: 12px;
+  --shadow: 0 2px 12px 0 #0008;
+  --font: 'JetBrains Mono', monospace;
+}
+
+html {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 18px;
+  min-height: 100vh;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Header */
+header {
+  background: var(--surface);
+  padding: 2rem 1rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-bottom: 1px solid #222;
+  text-align: center;
+}
+header h1 { margin: 0; font-size: 2rem; color: var(--accent); }
+
+nav {
+  display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center;
+}
+nav a {
+  color: var(--accent2);
+  text-decoration: none;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: 0.4rem 1rem;
+  background: var(--surface);
+}
+nav a:hover { color: var(--accent); border: 1px solid var(--accent); background: var(--surface-2); }
+nav a.active { color: var(--accent); border: 1px solid var(--accent); box-shadow: inset 0 0 0 1px #00f7a74d; }
+
+/* Main */
+main {
+  flex: 1;
+  padding: 2rem 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+h2, h3 { color: var(--accent); margin: 0 0 1rem 0; }
+p { line-height: 1.7; margin: 0 0 1rem 0; }
+strong { color: var(--accent2); }
+em { color: var(--muted); }
+
+/* Callout & formula */
+.callout, .formula {
+  background: #10161c;
+  border: 1px solid #22303b;
+  border-left: 4px solid var(--accent2);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 2px 10px #0006;
+  text-align: center;
+  max-width: 900px;
+  margin: 0 auto 1.25rem;
+}
+.callout h3 { color: var(--accent); margin: 0 0 .5rem 0; }
+.formula code {
+  background: #0f1318;
+  padding: .08rem .35rem;
+  border-radius: 6px;
+  border: 1px solid #1f232b;
+}
+
+/* Controls (sliders, inputs, button) */
+.controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: .8rem;
+  align-items: end;
+  max-width: 900px;
+  margin: .5rem auto 1.25rem;
+}
+
+/* Force controls to stack vertically (one per row) */
+.controls{
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch;
+  gap: .8rem;
+  max-width: 520px;       /* tweak or remove if you want full width */
+  margin: .5rem auto 1.25rem;
+}
+
+.controls > div{ width: 100%; }
+.controls input[type="number"],
+.controls input[type="range"],
+.controls #runBtn{ width: 100%; }
+
+
+.controls label { font-size: .92rem; color: var(--muted); }
+.controls input[type="number"], .controls input[type="range"] {
+  width: 100%;
+  background: #0f1419;
+  color: var(--text);
+  border: 1px solid #1f232b;
+  border-radius: 10px;
+  padding: .5rem .6rem;
+  box-shadow: inset 0 0 0 1px #0b1116;
+}
+.controls input[type="range"] {
+  height: 2.1rem;
+  padding: 0 .2rem;
+}
+.controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--accent);
+  border: 1px solid #073b2c;
+  box-shadow: 0 0 0 3px #00f7a733;
+}
+.controls #runBtn {
+  appearance: none;
+  border: 1px solid var(--accent);
+  color: var(--bg);
+  background: linear-gradient(180deg, var(--accent) 0%, #00d08c 100%);
+  border-radius: 12px;
+  font-weight: 800;
+  letter-spacing: .3px;
+  padding: .65rem 1rem;
+  cursor: pointer;
+  box-shadow: 0 8px 24px #00f7a722;
+}
+.controls #runBtn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px #00f7a744;
+}
+
+/* Mini text */
+.mini { font-size: .9rem; color: var(--muted); opacity: .95; }
+.metrics { max-width: 900px; margin: .25rem auto; text-align: center; opacity: .95; }
+
+/* Code box */
+.codebox {
+  background: #11161b;
+  border: 1px solid #20242b;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 1rem 1.1rem;
+  max-width: 900px;
+  margin: .75rem auto 1rem;
+  text-align: left;
+}
+.codebox pre { margin: 0; overflow-x: auto; white-space: pre; }
+.codebox code {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: #e5e9f0;
+}
+
+/* Charts */
+canvas {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  background: linear-gradient(180deg, #1a1f26 0%, #171b20 100%);
+  border: 1px solid #20242b;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin: .6rem 0 1.1rem;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1.2rem 0 1rem 0;
+  background: #181c20;
+  color: var(--muted);
+  font-size: 0.9rem;
+  border-top: 1px solid #222;
+  opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  main { padding: 1rem .8rem; font-size: 1rem; }
+  header h1 { font-size: 1.6rem; }
+}

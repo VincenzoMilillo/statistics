@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Homework 7 — Penetration Score Random Walk</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw5.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a class="active" href="hmw6.html">Homework 8</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Homework 7 — Penetration score process simulation (Random Walk)</h2>
+
+    <div class="callout">
+      <h3>Setup</h3>
+      <p>Each week, the server either stays secure \((+1)\) or gets breached \((-1)\).</p>
+      <p>There are \(m\) independent attackers; each breaches with probability \(p\). A breach occurs in a week if at least one attacker succeeds: \(\\;\\pi = 1-(1-p)^m\\).</p>
+      <p>Thus the weekly step \(X_i\\in\\{+1,-1\\}\) follows \(P(X_i=+1) = (1-p)^m\\) and \(P(X_i=-1) = 1-(1-p)^m\\). The cumulative score after \(n\) weeks is \(S_n=\\sum_{i=1}^n X_i\\).</p>
+    </div>
+
+    <div class="controls">
+      <div>
+        <label for="weeks">Weeks (n)</label>
+        <input id="weeks" type="number" min="5" max="500" step="1" value="50">
+      </div>
+      <div>
+        <label for="attackers">Attackers (m)</label>
+        <input id="attackers" type="number" min="1" max="1000" step="1" value="5">
+      </div>
+      <div>
+        <label for="p">Per-attacker breach probability (p)</label>
+        <input id="p" type="range" min="0" max="1" step="0.01" value="0.15" oninput="pVal.textContent=this.value">
+        <div class="mini">p = <span id="pVal">0.15</span></div>
+      </div>
+      <div>
+        <label for="runs">Trajectories simulated (R)</label>
+        <input id="runs" type="number" min="10" max="20000" step="10" value="2000">
+      </div>
+      <div>
+        <button id="runBtn">Run simulation</button>
+      </div>
+    </div>
+
+    <h3>Sample trajectories (random walk)</h3>
+    <canvas id="trajChart" height="220"></canvas>
+
+    <h3>Final scores: simulation vs binomial prediction</h3>
+    <canvas id="histChart" height="240"></canvas>
+    <p class="mini" id="metrics"></p>
+
+    <div class="formula">
+      <p><strong>Distribution of \(S_n\).</strong> Let \(q = P(X_i=+1)=(1-p)^m\). Then</p>
+      <p>\(P(S_n = k) = \binom{n}{(n+k)/2}\, q^{(n+k)/2}\,(1-q)^{(n-k)/2}\) for integers \(k\) with the same parity as \(n\) and \(|k|\le n\).</p>
+      <p>\(\mathbb{E}[S_n] = n(2q-1) = n(1-2\pi), \quad \operatorname{Var}(S_n) = 4n\,q(1-q)=4n\,\pi(1-\pi).\)</p>
+    </div>
+
+    <div class="codebox"><pre><code>// Notes
+// Breach-in-week probability: pi = 1 - (1 - p)^m
+// Secure-in-week probability: q = (1 - p)^m
+// Weekly step: +1 w.p. q,  -1 w.p. 1-q
+// End-score S_n relates to #secure weeks K ~ Binomial(n, q) by S_n = (+1)*K + (-1)*(n-K) = 2K - n</code></pre></div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+
+  <script>
+    // Helpers
+    const rand = Math.random;
+    function simulateWalk(n, q){
+      const y = new Array(n);
+      let s = 0;
+      for (let i=0;i<n;i++){
+        s += (rand() < q) ? +1 : -1;
+        y[i] = s;
+      }
+      return y;
+    }
+    function comb(n,k){
+      if (k<0||k>n) return 0;
+      if (k===0||k===n) return 1;
+      // stable multiplicative form
+      let res = 1;
+      for (let i=1;i<=k;i++){
+        res = res * (n - k + i) / i;
+      }
+      return res;
+    }
+    function theoreticalSnPMF(n, q){
+      const xs = [], ps = [];
+      for (let k = -n; k <= n; k += 2){
+        const r = (n + k)/2; // successes (# of +1)
+        const p = comb(n, r) * Math.pow(q, r) * Math.pow(1-q, n-r);
+        xs.push(k); ps.push(p);
+      }
+      return {xs, ps};
+    }
+
+    // Charts
+    const trajCtx = document.getElementById('trajChart').getContext('2d');
+    const histCtx = document.getElementById('histChart').getContext('2d');
+    let trajChart, histChart;
+
+    function buildTrajChart(lines){
+      if (trajChart) trajChart.destroy();
+      const labels = Array.from({length: lines[0].length}, (_,i)=> i+1);
+      const palette = ['#00ffd0','#4b7fff','#ff6384','#ffa600','#9c27b0','#8bc34a','#ff9800','#03a9f4','#f44336','#cddc39'];
+      const datasets = lines.map((y, i)=>({
+        label: 'Traj ' + (i+1),
+        data: y,
+        borderColor: palette[i % palette.length],
+        backgroundColor: palette[i % palette.length] + '33',
+        borderWidth: 1.4,
+        pointRadius: 0,
+        tension: 0
+      }));
+      trajChart = new Chart(trajCtx, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+          animation: false,
+          plugins: { legend: { display: false, labels: { color: '#e5e9f0' } } },
+          scales: {
+            x: { title: { display: true, text: 'Week', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } },
+            y: { title: { display: true, text: 'Cumulative score Sₙ', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } }
+          }
+        }
+      });
+    }
+
+    function buildHistChart(xs, simCounts, thProbs){
+      if (histChart) histChart.destroy();
+      const total = simCounts.reduce((a,b)=>a+b,0)||1;
+      const simProb = simCounts.map(c => c/total);
+      histChart = new Chart(histCtx, {
+        type: 'bar',
+        data: {
+          labels: xs.map(String),
+          datasets: [
+            { label: 'Simulation (probability)', data: simProb, backgroundColor: 'rgba(75,127,255,0.35)', borderColor: 'rgba(75,127,255,0.9)', borderWidth: 1.5, borderRadius: 6 },
+            { label: 'Theoretical Binomial', type: 'line', data: thProbs, borderColor: 'rgba(0,255,208,0.95)', backgroundColor: 'rgba(0,255,208,0.15)', tension: .15, pointRadius: 0, fill: false }
+          ]
+        },
+        options: {
+          plugins: { legend: { labels: { color: '#e5e9f0' } } },
+          scales: {
+            x: { ticks: { color:'#e5e9f0', maxRotation: 0 }, grid: { color:'#23272f' } },
+            y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero: true }
+          }
+        }
+      });
+    }
+
+    function run(){
+      const n = Math.max(5, Math.min(500, parseInt(document.getElementById('weeks').value||50)));
+      const m = Math.max(1, Math.min(1000, parseInt(document.getElementById('attackers').value||5)));
+      const p = Math.max(0, Math.min(1, parseFloat(document.getElementById('p').value||0.15)));
+      const R = Math.max(10, Math.min(20000, parseInt(document.getElementById('runs').value||2000)));
+      const pi = 1 - Math.pow(1-p, m);   // breach prob per week
+      const q  = 1 - pi;                  // secure prob per week
+
+      // Trajectories: draw 10 samples for clarity
+      const show = Math.min(10, R);
+      const lines = [];
+      for (let i=0;i<show;i++) lines.push(simulateWalk(n, q));
+      buildTrajChart(lines);
+
+      // End-score histogram over R runs
+      const xs = []; const index = new Map(); let idx=0;
+      for (let k = -n; k <= n; k+=2){ xs.push(k); index.set(k, idx++); }
+      const counts = new Array(xs.length).fill(0);
+      for (let r=0;r<R;r++){
+        let s = 0;
+        for (let i=0;i<n;i++) s += (rand() < q) ? +1 : -1;
+        counts[index.get(s)]++;
+      }
+      const th = theoreticalSnPMF(n, q);
+      buildHistChart(xs, counts, th.ps);
+
+      // Metrics: mean / variance empirical vs theory
+      const total = counts.reduce((a,b)=>a+b,0);
+      let mean = 0, var_ = 0;
+      for (let i=0;i<xs.length;i++){ mean += xs[i]*counts[i]; }
+      mean /= total||1;
+      for (let i=0;i<xs.length;i++){ const d=xs[i]-mean; var_ += d*d*counts[i]; }
+      var_ /= total||1;
+      const thMean = n*(2*q-1);
+      const thVar = 4*n*q*(1-q);
+      document.getElementById('metrics').textContent =
+        `q = (1-p)^m = ${(q).toFixed(6)} | weekly breach π = ${pi.toFixed(6)} | ` +
+        `Empirical mean ≈ ${mean.toFixed(3)}, var ≈ ${var_.toFixed(3)} | ` +
+        `Theoretical mean = ${thMean.toFixed(3)}, var = ${thVar.toFixed(3)}`;
+    }
+
+    document.getElementById('runBtn').addEventListener('click', run);
+    // initial render
+    run();
+  </script>
+</body>
+</html>
