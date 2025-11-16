@@ -29,8 +29,8 @@
 
     <div class="callout">
       <h3>Big picture</h3>
-      <p><strong>Bernoulli process:</strong> independent trials \(X_i\\in\\{0,1\\}\) with \(P(X_i=1)=p\).</p>
-      <p><strong>Random walk:</strong> steps \(Y_i\\in\\{-1,+1\\}\) with \(P(Y_i=+1)=q\). Setting \(Y_i=2X_i-1\) maps one to the other with \(q=p\).</p>
+      <p><strong>Bernoulli process:</strong> independent trials \(X_i \in\ {0,1\\}\) with \(P(X_i=1)=p\).</p>
+      <p><strong>Random walk:</strong> steps \(Y_i \in\ {-1,+1\\}\) with \(P(Y_i=+1)=q\). Setting \(Y_i=2X_i-1\) maps one to the other with \(q=p\).</p>
       <p>Hence \(S_n = \\sum Y_i = 2 \\sum X_i - n\\). The distributions are the same up to an affine transformation.</p>
     </div>
 
@@ -39,8 +39,7 @@
         <p><strong>Binomial link.</strong> If \(K=\\sum_{i=1}^n X_i \\sim \\text{Binomial}(n,p)\), then</p>
         <p>\(P(S_n = k) = P\\big(K=(n+k)/2\\big) = \\binom{n}{(n+k)/2} p^{(n+k)/2}(1-p)^{(n-k)/2}.\)</p>
         <p>LLN: \(\\frac{K}{n} \\to p \\Rightarrow \\frac{S_n}{n} = 2\\frac{K}{n}-1 \\to 2p-1\\).</p>
-      </div>
-      <div class="formula">
+  
         <p><strong>Pascal (Tartaglia) & binomial expansion.</strong></p>
         <p>Coefficients in \\((a+b)^n\\) are the entries of row \(n\) of Pascal’s triangle.</p>
         <p>For a Bernoulli/Walk process: \(P(K=k) = \\binom{n}{k}p^k(1-p)^{n-k}\\), exactly the same algebra.</p>
@@ -49,8 +48,10 @@
 
     <h3>Visual: Pascal’s triangle rows and binomial coefficients</h3>
     <div id="triangle" class="triangle"></div>
+    <br>
     <div class="mini center">Rows 0…10 of Pascal/Tartaglia (hover to see values)</div>
-
+    <br>
+    <br>
     <h3>Distribution view: Binomial (K) vs. Random walk (Sₙ)</h3>
     <canvas id="binomChart" height="220"></canvas>
     <canvas id="walkChart" height="220"></canvas>
