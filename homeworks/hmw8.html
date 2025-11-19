@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Homework 10 — Counting Process & Poisson Approximation</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw8.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a class="active" href="hmw8.html">Homework 10</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Homework 10 — Simulated Counting Process & Poisson Limit</h2>
+
+    <div class="callout">
+      <h3>Homework focus: from Bernoulli ticks to a Poisson process</h3>
+      <p>
+        We simulate a <strong>counting process</strong> on the time interval \([0, T]\) with a constant
+        average rate \(\lambda\). Time is cut into \(n\) tiny subintervals. In each subinterval we flip
+        a Bernoulli coin with
+        \[
+          P(\text{event in subinterval}) = \frac{\lambda}{n}.
+        \]
+      </p>
+      <p>
+        As \(n\) becomes large, the total number of events and the cumulative counts over time approximate a
+        <strong>Poisson process</strong> with rate \(\lambda\). In particular,
+        \[
+          N(t) \sim \text{Poisson}(\lambda t),
+        \]
+        with independent and stationary increments.
+      </p>
+    </div>
+
+    <h3>Discrete-time approximation</h3>
+    <p>
+      Fix \(T = 1\). For each run we:
+    </p>
+    <p>
+      1. Divide \([0,1]\) into \(n\) subintervals of length \(\Delta t = 1/n\).<br>
+      2. In each subinterval, generate an event independently with probability \(\lambda/n\).<br>
+      3. Let \(N(t)\) count how many events have occurred up to time \(t\).
+    </p>
+    <p>
+      The plot below shows a single simulated sample path \(t \mapsto N(t)\) and a histogram of the total
+      count at time \(T=1\) over many runs, compared with the theoretical Poisson\((\lambda)\) distribution.
+    </p>
+
+    <div class="controls">
+      <div>
+        <label for="lambda">Rate λ</label>
+        <input id="lambda" type="range" min="0.5" max="10" step="0.5" value="3" oninput="lambdaVal.textContent=this.value">
+        <div class="mini">λ = <span id="lambdaVal">3</span></div>
+      </div>
+      <div>
+        <label for="nSteps">Subintervals n</label>
+        <input id="nSteps" type="number" min="50" max="10000" step="50" value="2000">
+      </div>
+      <div>
+        <label for="nRuns">Monte Carlo runs</label>
+        <input id="nRuns" type="number" min="50" max="3000" step="50" value="500">
+      </div>
+      <button id="simulateBtn">Simulate</button>
+    </div>
+
+    <h3>Sample path of the counting process N(t)</h3>
+    <canvas id="pathChart" height="240"></canvas>
+
+    <h3>Distribution at time T = 1</h3>
+    <p>
+      If the limit is indeed a Poisson process, then
+      \[
+        N(1) \sim \text{Poisson}(\lambda),
+      \]
+      meaning
+      \[
+        P(N(1) = k) = e^{-\lambda} \frac{\lambda^k}{k!}, \quad k = 0,1,2,\dots
+      \]
+      The bar chart compares simulated frequencies with this theoretical mass function.
+    </p>
+    <canvas id="histChart" height="240"></canvas>
+
+    <h3>Identifying the limiting process</h3>
+
+    <div class="box">
+      <p><strong>Poisson process with rate \(\lambda\).</strong></p>
+      <p>
+        A Poisson process \(\{N(t)\}_{t \ge 0}\) with rate \(\lambda &gt; 0\) is characterized by:
+      </p>
+      <p>
+        \[
+          N(0) = 0, \quad
+          N(t) \in \{0,1,2,\dots\},
+        \]
+        with <strong>independent increments</strong> and
+        <strong>stationary increments</strong>:
+        for \(0 \le s &lt; t\),
+        \[
+          N(t) - N(s) \sim \text{Poisson}(\lambda (t-s)).
+        \]
+      </p>
+      <p>
+        In our discrete model, each small interval either contains 0 or 1 event with probability
+        approximately \(\lambda \Delta t\). As \(n \to \infty\) and \(\Delta t \to 0\), the limit
+        of this Bernoulli construction has the Poisson distribution for counts.
+      </p>
+    </div>
+
+    <div class="box">
+      <p><strong>Inter-arrival times and λ.</strong></p>
+      <p>
+        In a Poisson process, the waiting time between events is exponential:
+        \[
+          \text{inter-arrival time} \sim \text{Exponential}(\lambda),
+        \]
+        with mean \(1/\lambda\).
+      </p>
+      <p>
+        The parameter \(\lambda\) has a clear operational meaning:
+        \[
+          \mathbb{E}[N(t)] = \lambda t, \quad \text{Var}(N(t)) = \lambda t.
+        \]
+        It is the <strong>average rate of events per unit time</strong>, and it also controls
+        the variability of the counts.
+      </p>
+      <p>
+        In cybersecurity, \(\lambda\) could represent the average number of alerts per second,
+        failed logins per minute, or suspicious packets per minute under a “normal” regime.
+        Deviations from the expected Poisson behavior can signal anomalies.
+      </p>
+    </div>
+
+    <div class="codebox">
+<pre><code>// Discrete approximation
+// Time horizon: T = 1
+// Divide [0,1] into n subintervals of length Δt = 1/n
+// In each subinterval, generate an event with probability λ/n
+// N(t) = cumulative number of events → approximates Poisson process with rate λ
+// At t = 1: N(1) ≈ Poisson(λ)</code></pre>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+
+  <script>
+    const T = 1;
+
+    function simulatePath(lambda, n) {
+      const dt = T / n;
+      const times = [];
+      const counts = [];
+      let N = 0;
+
+      for (let k = 0; k <= n; k++) {
+        const t = k * dt;
+        times.push(t.toFixed(3));
+
+        if (k > 0) {
+          if (Math.random() < lambda / n) {
+            N += 1;
+          }
+        }
+        counts.push(N);
+      }
+      return { times, counts, total: N };
+    }
+
+    function simulateMany(lambda, n, runs) {
+      const totals = [];
+      for (let r = 0; r < runs; r++) {
+        const res = simulatePath(lambda, n);
+        totals.push(res.total);
+      }
+      return totals;
+    }
+
+    function buildHistogram(data) {
+      const counts = {};
+      data.forEach(k => {
+        counts[k] = (counts[k] || 0) + 1;
+      });
+      const keys = Object.keys(counts).map(Number).sort((a,b)=>a-b);
+      const freqs = keys.map(k => counts[k] / data.length);
+      return { keys, freqs };
+    }
+
+    function poissonPMF(lambda, maxK) {
+      const ks = [];
+      const ps = [];
+      let p0 = Math.exp(-lambda);
+      ks.push(0);
+      ps.push(p0);
+      let prev = p0;
+      for (let k = 1; k <= maxK; k++) {
+        const pk = prev * lambda / k;
+        ks.push(k);
+        ps.push(pk);
+        prev = pk;
+      }
+      return { ks, ps };
+    }
+
+    const pathCtx = document.getElementById('pathChart').getContext('2d');
+    const histCtx = document.getElementById('histChart').getContext('2d');
+
+    let pathChart = new Chart(pathCtx, {
+      type: 'line',
+      data: {
+        labels: [],
+        datasets: [{
+          label: 'N(t) sample path',
+          data: [],
+          borderColor: 'rgba(0,255,208,0.95)',
+          backgroundColor: 'rgba(0,255,208,0.20)',
+          borderWidth: 2,
+          pointRadius: 0,
+          stepped: true,
+          tension: 0
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color:'#e5e9f0' } } },
+        scales: {
+          x: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, title:{display:true,text:'t',color:'#e5e9f0'} },
+          y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero:true }
+        }
+      }
+    });
+
+    let histChart = new Chart(histCtx, {
+      type: 'bar',
+      data: {
+        labels: [],
+        datasets: [
+          {
+            label: 'Simulated frequencies',
+            data: [],
+            backgroundColor: 'rgba(75,127,255,0.35)',
+            borderColor: 'rgba(75,127,255,0.95)',
+            borderWidth: 1.5,
+            borderRadius: 6
+          },
+          {
+            label: 'Poisson pmf (theoretical)',
+            data: [],
+            type: 'line',
+            fill: false,
+            borderColor: 'rgba(255,193,7,0.95)',
+            borderWidth: 2,
+            tension: 0.15,
+            pointRadius: 3
+          }
+        ]
+      },
+      options: {
+        plugins: { legend: { labels: { color:'#e5e9f0' } } },
+        scales: {
+          x: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, title:{display:true,text:'k',color:'#e5e9f0'} },
+          y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero:true }
+        }
+      }
+    });
+
+    function runSimulation() {
+      const lambda = parseFloat(document.getElementById('lambda').value);
+      const n = parseInt(document.getElementById('nSteps').value, 10);
+      const runs = parseInt(document.getElementById('nRuns').value, 10);
+
+      // One sample path
+      const pathRes = simulatePath(lambda, n);
+      pathChart.data.labels = pathRes.times;
+      pathChart.data.datasets[0].data = pathRes.counts;
+      pathChart.update();
+
+      // Distribution at T = 1 over many runs
+      const totals = simulateMany(lambda, n, runs);
+      const { keys, freqs } = buildHistogram(totals);
+
+      // Poisson pmf over matching support
+      const maxK = keys[keys.length - 1] || 0;
+      const pois = poissonPMF(lambda, maxK);
+
+      histChart.data.labels = keys.map(String);
+      histChart.data.datasets[0].data = freqs;
+
+      const pmfOnKeys = keys.map(k => {
+        const idx = pois.ks.indexOf(k);
+        return idx >= 0 ? pois.ps[idx] : 0;
+      });
+      histChart.data.datasets[1].data = pmfOnKeys;
+
+      histChart.update();
+    }
+
+    document.getElementById('simulateBtn').addEventListener('click', runSimulation);
+
+    // Initial run
+    runSimulation();
+  </script>
+</body>
+</html>

@@ -20,30 +20,131 @@
     <br>
     <nav>
       <a href="../index.html">Home</a>
-      <a class="active" href="hmw6.html">Homework 9 (todo)</a>
+      <a class="active" href="hmw7.html">Homework 9</a>
     </nav>
   </header>
 
   <main>
     <h2>Homework 8 — Compare Bernoulli Process with Random Walk</h2>
 
+    <p>
+      In this page we take a single probabilistic object a sequence of coin flips and look at it from
+      two different perspectives:
+      as a <strong>Bernoulli process</strong> that counts successes and as a <strong>random walk</strong> that
+      moves up or down by one unit at each step. The key message is that these two views are
+      mathematically equivalent: one keeps track of the number of \(1\)'s, the other keeps track of the
+      cumulative position after \(+1/-1\) steps. This lets us reuse all binomial combinatorics to describe
+      the random walk.
+    </p>
+
     <div class="callout">
       <h3>Big picture</h3>
-      <p><strong>Bernoulli process:</strong> independent trials \(X_i \in\ {0,1\\}\) with \(P(X_i=1)=p\).</p>
-      <p><strong>Random walk:</strong> steps \(Y_i \in\ {-1,+1\\}\) with \(P(Y_i=+1)=q\). Setting \(Y_i=2X_i-1\) maps one to the other with \(q=p\).</p>
-      <p>Hence \(S_n = \\sum Y_i = 2 \\sum X_i - n\\). The distributions are the same up to an affine transformation.</p>
+      <p><strong>Bernoulli process:</strong> independent trials \(X_i \in \{0,1\}\) with \(P(X_i = 1) = p\).</p>
+      <p><strong>Random walk:</strong> steps \(Y_i \in \{-1,+1\}\) with \(P(Y_i = +1) = q\).</p>
+      <p>
+        If we define
+        \[
+          Y_i = 2X_i - 1 \quad\text{and take } q = p,
+        \]
+        then each Bernoulli success (\(X_i = 1\)) becomes a \(+1\) step and each failure (\(X_i = 0\)) becomes a \(-1\) step.
+      </p>
+      <p>
+        The cumulative walk is
+        \[
+          S_n = \sum_{i=1}^n Y_i
+              = \sum_{i=1}^n (2X_i - 1)
+              = 2\sum_{i=1}^n X_i - n
+              = 2K - n,
+        \]
+        where \(K = \sum_{i=1}^n X_i\) is the <strong>number of successes</strong>.
+        So the distribution of \(S_n\) is just the binomial distribution of \(K\),
+        transformed by the affine map \(s = 2k - n\).
+      </p>
+      <p>
+        In other words, <strong>the random walk distribution and the binomial distribution are the same
+        up to an affine transformation</strong>. All the heavy lifting is already done by the binomial formula.
+      </p>
     </div>
 
     <div class="two-col">
       <div class="formula">
-        <p><strong>Binomial link.</strong> If \(K=\\sum_{i=1}^n X_i \\sim \\text{Binomial}(n,p)\), then</p>
-        <p>\(P(S_n = k) = P\\big(K=(n+k)/2\\big) = \\binom{n}{(n+k)/2} p^{(n+k)/2}(1-p)^{(n-k)/2}.\)</p>
-        <p>LLN: \(\\frac{K}{n} \\to p \\Rightarrow \\frac{S_n}{n} = 2\\frac{K}{n}-1 \\to 2p-1\\).</p>
+        <p><strong>Binomial link.</strong></p>
+        <p>
+          Let
+          \[
+            K = \sum_{i=1}^n X_i \sim \text{Binomial}(n,p).
+          \]
+          For the walk \(S_n = \sum_{i=1}^n Y_i\) with \(Y_i = 2X_i - 1\), we have the identity
+          \[
+            S_n = 2K - n \quad\Longleftrightarrow\quad
+            K = \frac{n + S_n}{2}.
+          \]
+        </p>
+        <p>
+          Therefore, for any admissible value \(s\) (same parity as \(n\)),
+          \[
+            P(S_n = s)
+              = P\Bigl(K = \tfrac{n+s}{2}\Bigr)
+              = \binom{n}{(n+s)/2}
+                p^{(n+s)/2}
+                (1-p)^{(n-s)/2}.
+          \]
+        </p>
+        <p>
+          By the Law of Large Numbers,
+          \[
+            \frac{K}{n} \to p \quad\Rightarrow\quad
+            \frac{S_n}{n}
+              = 2\frac{K}{n} - 1
+              \to 2p - 1.
+          \]
+          So the <strong>average position</strong> of the walk converges to the drift \(2p - 1\): positive if
+          \(p &gt; 0.5\), negative if \(p &lt; 0.5\), and flat on average when \(p = 0.5\).
+        </p>
   
         <p><strong>Pascal (Tartaglia) & binomial expansion.</strong></p>
-        <p>Coefficients in \\((a+b)^n\\) are the entries of row \(n\) of Pascal’s triangle.</p>
-        <p>For a Bernoulli/Walk process: \(P(K=k) = \\binom{n}{k}p^k(1-p)^{n-k}\\), exactly the same algebra.</p>
+        <p>
+          The coefficients in the expansion
+          \[
+            (a + b)^n = \sum_{k=0}^n \binom{n}{k} a^{n-k} b^k
+          \]
+          are exactly the entries of row \(n\) of Pascal’s (Tartaglia’s) triangle.
+        </p>
+        <p>
+          For a Bernoulli process (and equivalently for the random walk), the probability mass function
+          \[
+            P(K = k) = \binom{n}{k} p^k (1-p)^{n-k}
+          \]
+          uses <strong>the same coefficients</strong> \(\binom{n}{k}\): they count how many paths have exactly
+          \(k\) successes and \(n-k\) failures. The probabilities \(p^k(1-p)^{n-k}\) are just the weights
+          attached to each path. The triangle visualized below shows how these combinatorial weights grow with \(n\).
+        </p>
       </div>
+    </div>
+
+    <h3>What this page shows and why it matters</h3>
+    <div class="callout">
+      <p>
+        This page has three goals:
+      </p>
+      <p>
+        <strong>1. Unify two viewpoints.</strong>
+        Bernoulli sums \(K\) and random walks \(S_n\) are not two different problems; they are the same
+        stochastic process seen through different lenses. This is why we can describe the walk entirely
+        using binomial formulas.
+      </p>
+      <p>
+        <strong>2. Make the combinatorics visible.</strong>
+        Pascal/Tartaglia’s triangle encodes the number of ways to reach each value of \(K\).
+        The binomial and random-walk histograms show how these counts become probabilities once we plug in \(p\).
+      </p>
+      <p>
+        <strong>3. Connect with limits.</strong>
+        The Law of Large Numbers tells us that empirical averages (for both \(K\) and \(S_n\)) stabilize:
+        randomness does not disappear, but it becomes predictable at scale. This type of reasoning underpins
+        many models in cybersecurity where repeated events (alerts, packets, log entries) are treated as
+        draws from a distribution.
+      </p>
     </div>
 
     <h3>Visual: Pascal’s triangle rows and binomial coefficients</h3>
@@ -53,13 +154,32 @@
     <br>
     <br>
     <h3>Distribution view: Binomial (K) vs. Random walk (Sₙ)</h3>
+    <p>
+      The first chart shows the binomial distribution of the number of successes \(K\) for \(n = 30\) and \(p = 0.35\).
+      The second chart takes the same probabilities and simply re-labels the x-axis via the transformation
+      \(S_n = 2K - n\). This visually confirms that the random walk’s end-point distribution is just a
+      reparameterized binomial distribution.
+    </p>
     <canvas id="binomChart" height="220"></canvas>
     <canvas id="walkChart" height="220"></canvas>
 
     <h3>Side quest: Fibonacci</h3>
     <div class="callout">
-      <p>Counting constrained paths often yields <strong>Fibonacci</strong> numbers. For instance, the number of ways to reach step \(n\) using steps of size 1 or 2 satisfies \(F_{n}=F_{n-1}+F_{n-2}\).</p>
-      <p>This is not the unconstrained \\(\{-1,+1\\}\\) random walk, but it shows how simple step rules induce famous recurrences.</p>
+      <p>
+        Counting constrained paths often yields <strong>Fibonacci</strong> numbers. For instance, the number of ways
+        to reach step \(n\) using steps of size 1 or 2 satisfies the recurrence
+        \[
+          F_n = F_{n-1} + F_{n-2},
+        \]
+        because any path to \(n\) either comes from \(n-1\) (then you take a step of size 1) or from \(n-2\)
+        (then you take a step of size 2).
+      </p>
+      <p>
+        This is <em>not</em> the unconstrained \(\{-1,+1\}\) random walk studied above, but it shows how changing
+        the rules of movement (allowed steps, boundaries, absorbing states) produces different recurrences and
+        famous integer sequences. Random walks, binomial coefficients, and Fibonacci numbers are all variations
+        on the same combinatorial theme: counting paths.
+      </p>
     </div>
     <canvas id="fibChart" height="200"></canvas>
 
@@ -139,7 +259,7 @@
       data: {
         labels: labelsS.map(String),
         datasets: [{
-          label: `Random-walk Sₙ distribution (via Sₙ=2K−n)`,
+          label: `Random-walk Sₙ distribution (via Sₙ = 2K − n)`,
           data: probsS,
           backgroundColor: 'rgba(0,255,208,0.35)',
           borderColor: 'rgba(0,255,208,0.95)',

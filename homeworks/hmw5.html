@@ -9,210 +9,263 @@
   <script>
     window.MathJax = {
       tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
-      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+      options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
     };
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-  <header>
-    <h1>Statistics & Cybersecurity</h1>
-    <br>
-    <nav>
-      <a href="../index.html">Home</a>
-      <a class="active" href="hmw6.html">Homework 8</a>
-    </nav>
-  </header>
-
-  <main>
-    <h2>Homework 7 — Penetration score process simulation (Random Walk)</h2>
-
-    <div class="callout">
-      <h3>Setup</h3>
-      <p>Each week, the server either stays secure \((+1)\) or gets breached \((-1)\).</p>
-      <p>There are \(m\) independent attackers; each breaches with probability \(p\). A breach occurs in a week if at least one attacker succeeds: \(\\;\\pi = 1-(1-p)^m\\).</p>
-      <p>Thus the weekly step \(X_i\\in\\{+1,-1\\}\) follows \(P(X_i=+1) = (1-p)^m\\) and \(P(X_i=-1) = 1-(1-p)^m\\). The cumulative score after \(n\) weeks is \(S_n=\\sum_{i=1}^n X_i\\).</p>
-    </div>
-
+<header>
+  <h1>Statistics & Cybersecurity</h1>
+  <br>
+  <nav>
+    <a href="../index.html">Home</a>
+    <a class="active" href="hmw6.html">Homework 8</a>
+  </nav>
+</header>
+<main>
+  <h2>Homework 7 — Penetration Score Process Simulation</h2>
+  <div class="callout">
+    <h3>Context and Objective</h3>
+    <p>
+      This simulation models the resilience of a server under continuous attack by multiple independent adversaries, week by week. Each step increments the cumulative score either up (+1 for a secure week) or down (-1 for a breach). The probabilities depend on the number of attackers \(m\) and the individual breach probability \(p\).
+    </p>
+    <p>
+      <strong>Breach probability:</strong> <br>
+      \(\pi = 1 - (1 - p)^m\)
+    </p>
+    <p>
+      <strong>Probability of a secure week:</strong> <br>
+      \(q = (1 - p)^m\)
+    </p>
+  </div>
+  
+  <section>
+    <h3>Simulation Parameters</h3>
     <div class="controls">
       <div>
         <label for="weeks">Weeks (n)</label>
+        <br>
         <input id="weeks" type="number" min="5" max="500" step="1" value="50">
       </div>
       <div>
         <label for="attackers">Attackers (m)</label>
+        <br>
         <input id="attackers" type="number" min="1" max="1000" step="1" value="5">
       </div>
       <div>
         <label for="p">Per-attacker breach probability (p)</label>
+        <br>
         <input id="p" type="range" min="0" max="1" step="0.01" value="0.15" oninput="pVal.textContent=this.value">
         <div class="mini">p = <span id="pVal">0.15</span></div>
       </div>
       <div>
         <label for="runs">Trajectories simulated (R)</label>
+        <br>
         <input id="runs" type="number" min="10" max="20000" step="10" value="2000">
       </div>
       <div>
-        <button id="runBtn">Run simulation</button>
+        <button id="runBtn">Run Simulation</button>
       </div>
     </div>
-
-    <h3>Sample trajectories (random walk)</h3>
+    <p class="mini note">
+      <em>
+        Adjust the parameters above to explore different penetration testing scenarios and security resiliency.
+      </em>
+    </p>
+  </section>
+  
+  <section>
+    <h3>Sample Trajectories: Score Evolution Over Time</h3>
+    <p>
+      The chart below shows several random walk sample paths of the cumulative security score, week by week.
+      Each colored line represents an independent simulation realization. Fluctuations represent the randomness of attacks, while overall trends reveal the average defensive posture given the chosen parameters.
+    </p>
     <canvas id="trajChart" height="220"></canvas>
+    <p class="mini">
+      Each color corresponds to a separate simulation. <br>
+      If the lines tend downward, the system is vulnerable; if stable or trending upward, the defense is strong.
+    </p>
+  </section>
 
-    <h3>Final scores: simulation vs binomial prediction</h3>
+  <section>
+    <h3>Final Scores: Simulation vs Theoretical Prediction</h3>
+    <p>
+      Below is the distribution of final cumulative scores after all weeks across all simulated runs.<br>
+      The bar chart shows empirical probabilities from the simulation, while the line represents the theoretical binomial distribution prediction for these parameters.
+    </p>
     <canvas id="histChart" height="240"></canvas>
+    <p class="mini">
+      The width and location of the curve depend on attacker count, individual breach probability, and test duration.
+    </p>
     <p class="mini" id="metrics"></p>
-
-    <div class="formula">
-      <p><strong>Distribution of \(S_n\).</strong> Let \(q = P(X_i=+1)=(1-p)^m\). Then</p>
-      <p>\(P(S_n = k) = \binom{n}{(n+k)/2}\, q^{(n+k)/2}\,(1-q)^{(n-k)/2}\) for integers \(k\) with the same parity as \(n\) and \(|k|\le n\).</p>
-      <p>\(\mathbb{E}[S_n] = n(2q-1) = n(1-2\pi), \quad \operatorname{Var}(S_n) = 4n\,q(1-q)=4n\,\pi(1-\pi).\)</p>
-    </div>
-
-    <div class="codebox"><pre><code>// Notes
-// Breach-in-week probability: pi = 1 - (1 - p)^m
-// Secure-in-week probability: q = (1 - p)^m
-// Weekly step: +1 w.p. q,  -1 w.p. 1-q
-// End-score S_n relates to #secure weeks K ~ Binomial(n, q) by S_n = (+1)*K + (-1)*(n-K) = 2K - n</code></pre></div>
-
-  </main>
-
-  <footer>
-    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
-  </footer>
-
-  <script>
-    // Helpers
-    const rand = Math.random;
-    function simulateWalk(n, q){
-      const y = new Array(n);
-      let s = 0;
-      for (let i=0;i<n;i++){
-        s += (rand() < q) ? +1 : -1;
-        y[i] = s;
+  </section>
+  
+  <section>
+    <h3>Statistical Properties & Notes</h3>
+    <ul>
+      <li><strong>Expected mean:</strong> \(\mathbb{E}[S_n] = n(2q-1) = n(1-2\pi)\)</li>
+      <li><strong>Variance:</strong> \(\operatorname{Var}(S_n) = 4nq(1-q) = 4n\pi(1-\pi)\)</li>
+      <li>The process \(S_n\) corresponds to a shifted binomial: if \(K\) is the number of secure weeks (\(K \sim \text{Binomial}(n,q)\)), then \(S_n = 2K - n\).</li>
+    </ul>
+    <div class="codebox"><pre><code>
+// Technical notes
+// Breach probability: pi = 1 - (1 - p)^m
+// Secure week probability: q = (1 - p)^m
+// Weekly step: +1 with prob q, -1 with prob 1-q
+// Final score S_n is related to number of secure weeks K by S_n = 2K - n
+    </code></pre></div>
+  </section>
+</main>
+<footer>
+  <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+</footer>
+<script>
+// Helpers
+const rand = Math.random;
+function simulateWalk(n, q){
+  const y = new Array(n); let s = 0;
+  for (let i=0;i<n;i++){
+    s += (rand() < q) ? +1 : -1;
+    y[i] = s;
+  }
+  return y;
+}
+function comb(n,k){
+  if (k<0||k>n) return 0;
+  if (k===0||k===n) return 1;
+  let res = 1;
+  for (let i=1;i<=k;i++){ res = res * (n - k + i) / i; }
+  return res;
+}
+function theoreticalSnPMF(n, q){
+  const xs = [], ps = [];
+  for (let k = -n; k <= n; k += 2){
+    const r = (n + k)/2;
+    const p = comb(n, r) * Math.pow(q, r) * Math.pow(1-q, n-r);
+    xs.push(k); ps.push(p);
+  }
+  return {xs, ps};
+}
+// Charts
+const trajCtx = document.getElementById('trajChart').getContext('2d');
+const histCtx = document.getElementById('histChart').getContext('2d');
+let trajChart, histChart;
+function buildTrajChart(lines){
+  if (trajChart) trajChart.destroy();
+  const labels = Array.from({length: lines[0].length}, (_,i)=> i+1);
+  const palette = ['#00ffd0','#4b7fff','#ff6384','#ffa600','#9c27b0','#8bc34a','#ff9800','#03a9f4','#f44336','#cddc39'];
+  const datasets = lines.map((y, i)=>({
+    label: 'Traj ' + (i+1),
+    data: y,
+    borderColor: palette[i % palette.length],
+    backgroundColor: palette[i % palette.length] + '33',
+    borderWidth: 1.4,
+    pointRadius: 0,
+    tension: 0
+  }));
+  trajChart = new Chart(trajCtx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      animation: false,
+      plugins: {
+        legend: { display: false, labels: { color: '#e5e9f0' } }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Week', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } },
+        y: { title: { display: true, text: 'Cumulative Score $S_n$', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } }
       }
-      return y;
     }
-    function comb(n,k){
-      if (k<0||k>n) return 0;
-      if (k===0||k===n) return 1;
-      // stable multiplicative form
-      let res = 1;
-      for (let i=1;i<=k;i++){
-        res = res * (n - k + i) / i;
-      }
-      return res;
-    }
-    function theoreticalSnPMF(n, q){
-      const xs = [], ps = [];
-      for (let k = -n; k <= n; k += 2){
-        const r = (n + k)/2; // successes (# of +1)
-        const p = comb(n, r) * Math.pow(q, r) * Math.pow(1-q, n-r);
-        xs.push(k); ps.push(p);
-      }
-      return {xs, ps};
-    }
-
-    // Charts
-    const trajCtx = document.getElementById('trajChart').getContext('2d');
-    const histCtx = document.getElementById('histChart').getContext('2d');
-    let trajChart, histChart;
-
-    function buildTrajChart(lines){
-      if (trajChart) trajChart.destroy();
-      const labels = Array.from({length: lines[0].length}, (_,i)=> i+1);
-      const palette = ['#00ffd0','#4b7fff','#ff6384','#ffa600','#9c27b0','#8bc34a','#ff9800','#03a9f4','#f44336','#cddc39'];
-      const datasets = lines.map((y, i)=>({
-        label: 'Traj ' + (i+1),
-        data: y,
-        borderColor: palette[i % palette.length],
-        backgroundColor: palette[i % palette.length] + '33',
-        borderWidth: 1.4,
-        pointRadius: 0,
-        tension: 0
-      }));
-      trajChart = new Chart(trajCtx, {
-        type: 'line',
-        data: { labels, datasets },
-        options: {
-          animation: false,
-          plugins: { legend: { display: false, labels: { color: '#e5e9f0' } } },
-          scales: {
-            x: { title: { display: true, text: 'Week', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } },
-            y: { title: { display: true, text: 'Cumulative score Sₙ', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } }
-          }
-        }
-      });
-    }
-
-    function buildHistChart(xs, simCounts, thProbs){
-      if (histChart) histChart.destroy();
-      const total = simCounts.reduce((a,b)=>a+b,0)||1;
-      const simProb = simCounts.map(c => c/total);
-      histChart = new Chart(histCtx, {
-        type: 'bar',
-        data: {
-          labels: xs.map(String),
-          datasets: [
-            { label: 'Simulation (probability)', data: simProb, backgroundColor: 'rgba(75,127,255,0.35)', borderColor: 'rgba(75,127,255,0.9)', borderWidth: 1.5, borderRadius: 6 },
-            { label: 'Theoretical Binomial', type: 'line', data: thProbs, borderColor: 'rgba(0,255,208,0.95)', backgroundColor: 'rgba(0,255,208,0.15)', tension: .15, pointRadius: 0, fill: false }
-          ]
+  });
+}
+function buildHistChart(xs, simCounts, thProbs){
+  if (histChart) histChart.destroy();
+  const total = simCounts.reduce((a,b)=>a+b,0)||1;
+  const simProb = simCounts.map(c => c/total);
+  histChart = new Chart(histCtx, {
+    type: 'bar',
+    data: {
+      labels: xs.map(String),
+      datasets: [
+        {
+          label: 'Simulation (probability)',
+          data: simProb,
+          backgroundColor: 'rgba(75,127,255,0.35)',
+          borderColor: 'rgba(75,127,255,0.9)',
+          borderWidth: 1.5,
+          borderRadius: 6
         },
-        options: {
-          plugins: { legend: { labels: { color: '#e5e9f0' } } },
-          scales: {
-            x: { ticks: { color:'#e5e9f0', maxRotation: 0 }, grid: { color:'#23272f' } },
-            y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero: true }
-          }
+        {
+          label: 'Theoretical Binomial',
+          type: 'line',
+          data: thProbs,
+          borderColor: 'rgba(0,255,208,0.95)',
+          backgroundColor: 'rgba(0,255,208,0.15)',
+          tension: .15,
+          pointRadius: 0,
+          fill: false
         }
-      });
-    }
-
-    function run(){
-      const n = Math.max(5, Math.min(500, parseInt(document.getElementById('weeks').value||50)));
-      const m = Math.max(1, Math.min(1000, parseInt(document.getElementById('attackers').value||5)));
-      const p = Math.max(0, Math.min(1, parseFloat(document.getElementById('p').value||0.15)));
-      const R = Math.max(10, Math.min(20000, parseInt(document.getElementById('runs').value||2000)));
-      const pi = 1 - Math.pow(1-p, m);   // breach prob per week
-      const q  = 1 - pi;                  // secure prob per week
-
-      // Trajectories: draw 10 samples for clarity
-      const show = Math.min(10, R);
-      const lines = [];
-      for (let i=0;i<show;i++) lines.push(simulateWalk(n, q));
-      buildTrajChart(lines);
-
-      // End-score histogram over R runs
-      const xs = []; const index = new Map(); let idx=0;
-      for (let k = -n; k <= n; k+=2){ xs.push(k); index.set(k, idx++); }
-      const counts = new Array(xs.length).fill(0);
-      for (let r=0;r<R;r++){
-        let s = 0;
-        for (let i=0;i<n;i++) s += (rand() < q) ? +1 : -1;
-        counts[index.get(s)]++;
+      ]
+    },
+    options: {
+      plugins: { legend: { labels: { color: '#e5e9f0' } } },
+      scales: {
+        x: { ticks: { color:'#e5e9f0', maxRotation: 0 }, grid: { color:'#23272f' } },
+        y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero: true }
       }
-      const th = theoreticalSnPMF(n, q);
-      buildHistChart(xs, counts, th.ps);
-
-      // Metrics: mean / variance empirical vs theory
-      const total = counts.reduce((a,b)=>a+b,0);
-      let mean = 0, var_ = 0;
-      for (let i=0;i<xs.length;i++){ mean += xs[i]*counts[i]; }
-      mean /= total||1;
-      for (let i=0;i<xs.length;i++){ const d=xs[i]-mean; var_ += d*d*counts[i]; }
-      var_ /= total||1;
-      const thMean = n*(2*q-1);
-      const thVar = 4*n*q*(1-q);
-      document.getElementById('metrics').textContent =
-        `q = (1-p)^m = ${(q).toFixed(6)} | weekly breach π = ${pi.toFixed(6)} | ` +
-        `Empirical mean ≈ ${mean.toFixed(3)}, var ≈ ${var_.toFixed(3)} | ` +
-        `Theoretical mean = ${thMean.toFixed(3)}, var = ${thVar.toFixed(3)}`;
     }
-
-    document.getElementById('runBtn').addEventListener('click', run);
-    // initial render
-    run();
-  </script>
+  });
+}
+function run(){
+  const n = Math.max(5, Math.min(500, parseInt(document.getElementById('weeks').value||50)));
+  const m = Math.max(1, Math.min(1000, parseInt(document.getElementById('attackers').value||5)));
+  const p = Math.max(0, Math.min(1, parseFloat(document.getElementById('p').value||0.15)));
+  const R = Math.max(10, Math.min(20000, parseInt(document.getElementById('runs').value||2000)));
+  const pi = 1 - Math.pow(1-p, m);
+  const q = Math.pow(1 - p, m);
+  const show = Math.min(10, R);
+  const lines = [];
+  for (let i=0;i<show;i++) lines.push(simulateWalk(n, q));
+  buildTrajChart(lines);
+  const xs = [];
+  const index = new Map();
+  let idx=0;
+  for (let k = -n; k <= n; k+=2){
+    xs.push(k);
+    index.set(k, idx++);
+  }
+  const counts = new Array(xs.length).fill(0);
+  for (let r=0;r<R;r++){
+    let s = 0;
+    for (let i=0;i<n;i++) s += (rand() < q) ? +1 : -1;
+    counts[index.get(s)]++;
+  }
+  const th = theoreticalSnPMF(n, q);
+  buildHistChart(xs, counts, th.ps);
+  const total = counts.reduce((a,b)=>a+b,0);
+  let mean = 0, var_ = 0;
+  for (let i=0;i<xs.length;i++){
+    mean += xs[i]*counts[i];
+  }
+  mean /= total||1;
+  for (let i=0;i<xs.length;i++){
+    const d=xs[i]-mean;
+    var_ += d*d*counts[i];
+  }
+  var_ /= total||1;
+  const thMean = n*(2*q-1);
+  const thVar = 4*n*q*(1-q);
+  document.getElementById('metrics').textContent =
+    `q = (1-p)^m = ${(q).toFixed(6)} | weekly breach π = ${pi.toFixed(6)} | Empirical mean ≈ ${mean.toFixed(3)}, variance ≈ ${var_.toFixed(3)} | Theoretical mean = ${thMean.toFixed(3)}, variance = ${thVar.toFixed(3)}`;
+}
+document.getElementById('runBtn').addEventListener('click', run);
+const inputs = ['weeks', 'attackers', 'p', 'runs'];
+inputs.forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('input', run);
+});
+run();
+</script>
 </body>
 </html>

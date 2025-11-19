@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Homework 9 — Probability Interpretations & Measure Theory</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw7.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a class="active" href="hmw8.html">Homework 10</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Homework 9 — Interpretations, Axioms & Measure Theory</h2>
+
+    <p>
+      This page reviews the main interpretations of probability and shows how the
+      <strong>axiomatic</strong> and <strong>measure–theoretic</strong> framework
+      makes them compatible. We then use the axioms to derive
+      <strong>subadditivity</strong> and the <strong>inclusion–exclusion principle</strong>.
+    </p>
+
+    <div class="callout">
+      <h3>Homework focus: interpretations unified by axioms</h3>
+      <p>
+        Different schools of thought assign different meanings to \(P(A)\):
+        symmetry of outcomes, long-run frequencies, subjective degrees of belief, or
+        ratios of geometric measures. The axiomatic approach deliberately avoids
+        committing to one single meaning: it only requires that probabilities behave
+        according to a small set of rules.
+      </p>
+      <p>
+        Once we work inside a probability space \((\Omega, \mathcal{F}, P)\),
+        all these interpretations are just different ways to <em>construct</em> a measure
+        \(P\) on a \(\sigma\)-algebra \(\mathcal{F}\). The underlying calculus stays the same.
+      </p>
+    </div>
+
+    <h3>Interpretations of probability</h3>
+
+    <div class="box">
+      <p><strong>Classical (Laplace).</strong></p>
+      <p>
+        For a finite sample space with equally likely outcomes,
+        \[
+          P(A) = \frac{\#A}{\#\Omega}.
+        \]
+        Example: probability of drawing a specific card from a well-shuffled deck.
+        This works well when symmetry is obvious, but struggles with infinite or
+        asymmetric cases.
+      </p>
+
+      <p><strong>Frequentist.</strong></p>
+      <p>
+        Probability is a limiting relative frequency:
+        \[
+          P(A) \approx \frac{\text{number of times } A \text{ occurs}}{\text{number of trials}}
+        \]
+        in a long sequence of repeatable experiments. This ties probability to data,
+        but it is less clear for unique or non-repeatable events.
+      </p>
+    </div>
+
+    <div class="box">
+      <p><strong>Bayesian.</strong></p>
+      <p>
+        Probability quantifies a rational agent’s degree of belief:
+        \[
+          P(A \mid \text{information}) \in [0,1].
+        \]
+        Beliefs are updated via Bayes’ theorem,
+        \[
+          P(\theta \mid \text{data}) \propto P(\text{data} \mid \theta) P(\theta).
+        \]
+        Different agents may start from different priors, but coherence is enforced
+        by the probability rules.
+      </p>
+
+      <p><strong>Geometric.</strong></p>
+      <p>
+        For continuous sample spaces, probabilities are often defined as ratios of
+        lengths, areas or volumes:
+        \[
+          P(A) = \frac{\text{length/area/volume of } A}{\text{length/area/volume of } \Omega}.
+        \]
+        This is natural for “uniform” models on intervals or regions, but requires
+        a careful notion of measurable sets.
+      </p>
+    </div>
+
+    <div class="callout">
+      <h3>From interpretations to a probability space</h3>
+      <p>
+        Kolmogorov’s axioms define a probability space
+        \((\Omega, \mathcal{F}, P)\) where:
+      </p>
+      <p>
+        \(\Omega\) is the sample space; \(\mathcal{F}\) is a
+        \(\sigma\)-algebra of events (subsets of \(\Omega\)); and
+        \(P : \mathcal{F} \to [0,1]\) is a probability measure such that
+      </p>
+      <p>
+        \[
+          \begin{aligned}
+          &\text{(A1) } P(\Omega) = 1, \\
+          &\text{(A2) } P(A) \ge 0 \quad \text{for all } A \in \mathcal{F}, \\
+          &\text{(A3) } P\Bigl(\bigcup_{i=1}^\infty A_i\Bigr)
+            = \sum_{i=1}^\infty P(A_i) \quad \text{for pairwise disjoint } A_i.
+          \end{aligned}
+        \]
+      </p>
+      <p>
+        Classical, frequentist, Bayesian and geometric constructions simply correspond to
+        different ways of specifying \(\Omega\), \(\mathcal{F}\) and \(P\).
+        The axioms enforce consistency and avoid paradoxes that appear when we try to
+        reason with probabilities informally.
+      </p>
+    </div>
+
+    <h3>Probability & measure theory</h3>
+
+    <div class="box">
+      <p><strong>σ-algebras and probability measures.</strong></p>
+      <p>
+        A <strong>\(\sigma\)-algebra</strong> \(\mathcal{F}\) on \(\Omega\) is a collection
+        of subsets of \(\Omega\) that is closed under complements and countable unions.
+        It contains \(\emptyset\) and \(\Omega\).
+      </p>
+      <p>
+        A <strong>probability measure</strong> is a function
+        \(P : \mathcal{F} \to [0,1]\) such that
+        \(P(\Omega) = 1\) and \(P\) is countably additive on disjoint sets.
+        Formally, \((\Omega, \mathcal{F}, P)\) is a measure space with total mass 1.
+      </p>
+    </div>
+
+    <div class="box">
+      <p><strong>Random variables as measurable functions.</strong></p>
+      <p>
+        A random variable is a measurable function
+        \[
+          X : (\Omega, \mathcal{F}) \to (\mathbb{R}, \mathcal{B}),
+        \]
+        where \(\mathcal{B}\) is the Borel \(\sigma\)-algebra on \(\mathbb{R}\).
+      </p>
+      <p>
+        Measurability means that for every Borel set \(B\),
+        \(\{\omega \in \Omega : X(\omega) \in B\} \in \mathcal{F}\).
+        Events like \(\{X \le x\}\) are therefore valid elements of \(\mathcal{F}\),
+        and we can assign them probabilities via \(P\).
+      </p>
+      <p>
+        Expectation becomes an integral:
+        \[
+          \mathbb{E}[X] = \int_\Omega X(\omega)\, dP(\omega).
+        \]
+        This links probability theory directly to integration in measure theory.
+      </p>
+    </div>
+
+    <h3>From axioms to subadditivity</h3>
+    <p>
+      A key consequence of the axioms is the <strong>subadditivity</strong> of probability:
+      for any events \(A_1, A_2, \dots\),
+      \[
+        P\Bigl(\bigcup_{i=1}^\infty A_i\Bigr)
+        \le \sum_{i=1}^\infty P(A_i).
+      \]
+    </p>
+    <p>
+      Sketch of the derivation. Define disjoint sets
+      \[
+        C_1 = A_1, \quad
+        C_n = A_n \setminus \bigcup_{k=1}^{n-1} A_k \quad (n \ge 2).
+      \]
+      Then the \(C_n\) are pairwise disjoint and
+      \[
+        \bigcup_{i=1}^\infty A_i = \bigcup_{i=1}^\infty C_i.
+      \]
+      By countable additivity,
+      \[
+        P\Bigl(\bigcup_{i=1}^\infty A_i\Bigr)
+        = P\Bigl(\bigcup_{i=1}^\infty C_i\Bigr)
+        = \sum_{i=1}^\infty P(C_i).
+      \]
+      But \(C_i \subseteq A_i\), so \(P(C_i) \le P(A_i)\), hence
+      \[
+        \sum_{i=1}^\infty P(C_i)
+        \le \sum_{i=1}^\infty P(A_i),
+      \]
+      which gives subadditivity.
+    </p>
+
+    <h3>Inclusion–exclusion principle</h3>
+
+    <div class="box">
+      <p><strong>Two events.</strong></p>
+      <p>
+        For two events \(A\) and \(B\),
+        \[
+          P(A \cup B) = P(A) + P(B) - P(A \cap B).
+        \]
+      </p>
+      <p>
+        Derivation: write
+        \[
+          A \cup B = A \,\dot{\cup}\, (B \setminus A),
+        \]
+        where \(\dot{\cup}\) denotes disjoint union. Then
+        \[
+          P(A \cup B) = P(A) + P(B \setminus A).
+        \]
+        But \(B\) decomposes as
+        \[
+          B = (B \setminus A) \,\dot{\cup}\, (A \cap B),
+        \]
+        so
+        \[
+          P(B) = P(B \setminus A) + P(A \cap B)
+          \quad\Rightarrow\quad
+          P(B \setminus A) = P(B) - P(A \cap B).
+        \]
+        Substituting back gives the formula.
+      </p>
+    </div>
+
+    <div class="box">
+      <p><strong>Finite families.</strong></p>
+      <p>
+        For events \(A_1, \dots, A_n\),
+        the inclusion–exclusion principle states:
+      </p>
+      <p>
+        \[
+          P\Bigl(\bigcup_{i=1}^n A_i\Bigr)
+          = \sum_{i=1}^n P(A_i)
+            - \sum_{1 \le i < j \le n} P(A_i \cap A_j)
+            + \sum_{1 \le i < j < k \le n} P(A_i \cap A_j \cap A_k)
+            - \cdots
+        \]
+      </p>
+      <p>
+        Intuition: the naive sum \(\sum P(A_i)\) counts pairwise intersections twice,
+        triple intersections three times, and so on. The alternating signs successively
+        correct this overcounting. The derivation is a careful iterative application
+        of additivity and the two-event case.
+      </p>
+    </div>
+
+    <h3>Numerical illustration (subadditivity vs. inclusion–exclusion)</h3>
+    <p>
+      The chart below compares \(P(A)\), \(P(B)\), \(P(A \cup B)\), and
+      \(P(A) + P(B)\) for a simple example. You can see that the union
+      probability is always at most the sum, and exactly
+      \[
+        P(A \cup B) = P(A) + P(B) - P(A \cap B).
+      \]
+    </p>
+    <canvas id="probChart" height="210"></canvas>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+
+  <script>
+    // Simple numerical example: P(A)=0.6, P(B)=0.5, P(A∩B)=0.3
+    const pA = 0.6, pB = 0.5, pAB = 0.3;
+    const pUnion = pA + pB - pAB;
+    const pSum = pA + pB;
+
+    const ctx = document.getElementById('probChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['P(A)', 'P(B)', 'P(A∪B)', 'P(A)+P(B)'],
+        datasets: [{
+          label: 'Probabilities',
+          data: [pA, pB, pUnion, pSum],
+          backgroundColor: [
+            'rgba(0,255,208,0.35)',
+            'rgba(75,127,255,0.35)',
+            'rgba(255,193,7,0.35)',
+            'rgba(255,99,132,0.35)'
+          ],
+          borderColor: [
+            'rgba(0,255,208,0.95)',
+            'rgba(75,127,255,0.95)',
+            'rgba(255,193,7,0.95)',
+            'rgba(255,99,132,0.95)'
+          ],
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      },
+      options: {
+        plugins: { legend: { labels: { color:'#e5e9f0' } } },
+        scales: {
+          x: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } },
+          y: {
+            ticks: { color:'#e5e9f0' },
+            grid: { color:'#23272f' },
+            beginAtZero: true,
+            max: 1
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
