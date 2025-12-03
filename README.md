@@ -1,4 +1,4 @@
-# 📊 Statistics Course Project – Vincenzo Milillo
+# 📊 Statistics Course Project of Vincenzo Milillo
 
 Welcome!  
 I’m Vincenzo Milillo, a cybersecurity student with a background in computer engineering. This GitHub repository hosts the website I created for my Statistics course as part of my Bachelor's degree studies.
