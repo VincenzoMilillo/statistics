@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Homework 11 — Stochastic Differential Equations</title>
+  <link rel="stylesheet" href="../assets/css/style-hmw9.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(','\\)'], ['$', '$']] },
+      options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Homework 11 — SDEs & The Euler–Maruyama Method</h2>
+
+    <div class="callout">
+      <h3>From Discrete Walks to Continuous Calculus</h3>
+      <p>
+        In the previous homework (7), we studied the <strong>Random Walk</strong> as a discrete step-by-step process. 
+        When we make the time steps infinitesimally small (\(\Delta t \to 0\)), the random walk becomes a 
+        <strong>Wiener Process</strong> (Brownian Motion), denoted by \(W_t\).
+      </p>
+      <p>
+        This allows us to model complex systems in cybersecurity (i.e., traffic anomalies, diffusion models in AI, etc) 
+      </p>
+      <p>using <strong>Stochastic Differential Equations (SDEs)</strong> of the form:</p>
+      <p>
+        \[
+          dX_t = \mu(X_t, t)\,dt + \sigma(X_t, t)\,dW_t
+        \]
+      </p>
+      <p>
+        Here, \(\mu\) represents the deterministic <strong>drift</strong> (trend), and \(\sigma\) represents the 
+        stochastic <strong>diffusion</strong> (volatility/noise).
+      </p>
+    </div>
+    
+    <h3>The Euler–Maruyama Method</h3>
+    <p>
+      Since we cannot simulate continuous time on a digital computer, we must discretize the SDE. 
+      The <strong>Euler–Maruyama method</strong> is the stochastic equivalent of the Euler method for <strong>Ordinary Differential Equations (ODEs)</strong>.
+    </p>
+
+    <div class="box">
+      <p><strong>The Numerical Scheme</strong></p>
+      <p>
+        Given a time step \(\Delta t\), we update the state \(X\) iteratively:
+      </p>
+      <p>
+        \[
+          X_{n+1} = X_n + \mu(X_n, t_n)\Delta t + \sigma(X_n, t_n)\Delta W_n
+        \]
+      </p>
+      <p>
+        where the Brownian increment is:
+        \[
+          \Delta W_n = Z \sqrt{\Delta t}, \quad Z \sim \mathcal{N}(0, 1)
+        \]
+      </p>
+      <p>
+        Crucially, the noise scales with the <em>square root</em> of time, which differentiates stochastic calculus (Itô calculus) from standard calculus.
+      </p>
+    </div>
+
+    <h3>SDE Simulator</h3>
+    <p>
+      The simulator below generalizes the process. You can switch between 
+      <strong>Arithmetic Brownian Motion</strong> (constant noise) and 
+      <strong>Geometric Brownian Motion</strong> (noise proportional to value, used in finance and population dynamics).
+    </p>
+
+    <div class="controls">
+      <div>
+        <label for="modelSelect">Model Type</label>
+        <select id="modelSelect">
+          <option value="ABM">Arithmetic (Standard)</option>
+          <option value="GBM">Geometric (Exponential)</option>
+        </select>
+      </div>
+      <div>
+        <label for="drift">Drift (μ)</label>
+        <input id="drift" type="range" min="-2" max="2" step="0.1" value="0.5" oninput="driftVal.textContent=this.value">
+        <div class="mini">μ = <span id="driftVal">0.5</span></div>
+      </div>
+      <div>
+        <label for="sigma">Diffusion (σ)</label>
+        <input id="sigma" type="range" min="0" max="2" step="0.1" value="0.8" oninput="sigVal.textContent=this.value">
+        <div class="mini">σ = <span id="sigVal">0.8</span></div>
+      </div>
+      <div>
+        <label for="paths">Num Paths</label>
+        <input id="paths" type="number" min="1" max="50" value="10">
+      </div>
+      <div>
+        <label for="steps">Time Steps (N)</label>
+        <input id="steps" type="number" min="100" max="2000" value="500">
+      </div>
+      <button id="simBtn">Simulate SDE</button>
+    </div>
+
+    <canvas id="sdeChart" height="240"></canvas>
+
+    <h3>Relevance to AI & Security</h3>
+    <p>
+      Why does a cybersecurity expert need SDEs?
+    </p>
+    <div class="callout">
+      <ul style="text-align: left; display: inline-block;">
+        <li><strong>Diffusion Models (GenAI):</strong> Modern image generators (like Stable Diffusion) work by reversing a stochastic process that adds noise to an image. This "reverse SDE" is solved numerically.</li>
+        <li><strong>Anomaly Detection:</strong> Network latency and packet inter-arrival times can be modeled as Ornstein-Uhlenbeck processes. Sudden deviations from the SDE parameters signal an attack (e.g., DDoS).</li>
+        <li><strong>Differential Privacy:</strong> Adding calibrated noise (Gaussian mechanism) to queries is mathematically modeled using stochastic calculus to guarantee privacy budgets.</li>
+      </ul>
+    </div>
+
+    <h3>Implementation Details</h3>
+    <p>
+      Below is the JavaScript implementation of the Euler-Maruyama solver used in the chart above. 
+      Note the use of the <strong>Box-Muller transform</strong> to generate Gaussian noise from uniform random numbers.
+    </p>
+
+    <div class="codebox">
+<pre><code><span class="kw">function</span> <span class="fn">eulerMaruyama</span>(N, T, x0, muFunc, sigmaFunc) {
+  <span class="kw">const</span> dt = T / N;
+  <span class="kw">const</span> t = [], x = [];
+  t[<span class="num">0</span>] = <span class="num">0</span>;
+  x[<span class="num">0</span>] = x0;
+
+  <span class="kw">for</span> (<span class="kw">let</span> i = <span class="num">0</span>; i < N; i++) {
+    <span class="com">// Box-Muller for Standard Normal Z ~ N(0,1)</span>
+    <span class="kw">const</span> u1 = <span class="num">1</span> - Math.random();
+    <span class="kw">const</span> u2 = Math.random();
+    <span class="kw">const</span> Z = Math.sqrt(<span class="num">-2</span> * Math.log(u1)) * Math.cos(<span class="num">2</span> * Math.PI * u2);
+
+    <span class="com">// dW = sqrt(dt) * Z</span>
+    <span class="kw">const</span> dW = Math.sqrt(dt) * Z;
+
+    <span class="com">// SDE: dX = mu(x,t)dt + sigma(x,t)dW</span>
+    <span class="kw">const</span> drift = muFunc(x[i], t[i]);
+    <span class="kw">const</span> diffusion = sigmaFunc(x[i], t[i]);
+
+    x[i+<span class="num">1</span>] = x[i] + (drift * dt) + (diffusion * dW);
+    t[i+<span class="num">1</span>] = t[i] + dt;
+  }
+  <span class="kw">return</span> { t, x };
+}</code></pre>
+    </div>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+
+  <script>
+    // --- 1. Math Helpers ---
+
+    // Box-Muller Transform for Gaussian Noise N(0,1)
+    function randn_bm() {
+      let u = 0, v = 0;
+      while(u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+      while(v === 0) v = Math.random();
+      return Math.sqrt( -2.0 * Math.log( u ) ) * Math.cos( 2.0 * Math.PI * v );
+    }
+
+    // --- 2. The Euler-Maruyama General Solver ---
+    // muFunc and sigmaFunc are functions (x, t) => value
+    function solveSDE(N, T, x0, muFunc, sigmaFunc) {
+      const dt = T / N;
+      const tArray = new Float32Array(N + 1);
+      const xArray = new Float32Array(N + 1);
+      
+      tArray[0] = 0;
+      xArray[0] = x0;
+
+      for (let i = 0; i < N; i++) {
+        const currentT = tArray[i];
+        const currentX = xArray[i];
+        
+        const dW = Math.sqrt(dt) * randn_bm();
+        
+        const drift = muFunc(currentX, currentT);
+        const diffusion = sigmaFunc(currentX, currentT);
+        
+        xArray[i+1] = currentX + (drift * dt) + (diffusion * dW);
+        tArray[i+1] = currentT + dt;
+      }
+      return { t: tArray, x: xArray };
+    }
+
+    // --- 3. Chart Setup ---
+    const ctx = document.getElementById('sdeChart').getContext('2d');
+    let sdeChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: [], datasets: [] },
+      options: {
+        animation: false,
+        responsive: true,
+        plugins: { 
+          legend: { display: false },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        interaction: { mode: 'nearest', axis: 'x', intersect: false },
+        scales: {
+          x: { 
+            type: 'linear',
+            title: { display: true, text: 'Time (t)', color: '#e5e9f0' },
+            ticks: { color: '#e5e9f0' }, 
+            grid: { color: '#23272f' } 
+          },
+          y: { 
+            title: { display: true, text: 'Process Value X(t)', color: '#e5e9f0' },
+            ticks: { color: '#e5e9f0' }, 
+            grid: { color: '#23272f' } 
+          }
+        },
+        elements: { point: { radius: 0 } } // Hide points for performance
+      }
+    });
+
+    // --- 4. Simulation Logic ---
+    function runSimulation() {
+      const model = document.getElementById('modelSelect').value;
+      const mu = parseFloat(document.getElementById('drift').value);
+      const sigma = parseFloat(document.getElementById('sigma').value);
+      const numPaths = parseInt(document.getElementById('paths').value);
+      const N = parseInt(document.getElementById('steps').value);
+      const T = 1.0;
+      const x0 = (model === 'GBM') ? 1.0 : 0.0; // GBM starts at 1, ABM at 0
+
+      // Define drift and diffusion functions based on selection
+      let muFunc, sigmaFunc;
+
+      if (model === 'ABM') {
+        // Arithmetic Brownian Motion: dX = mu*dt + sigma*dW
+        muFunc = (x, t) => mu;
+        sigmaFunc = (x, t) => sigma;
+      } else {
+        // Geometric Brownian Motion: dX = mu*X*dt + sigma*X*dW
+        muFunc = (x, t) => mu * x;
+        sigmaFunc = (x, t) => sigma * x;
+      }
+
+      const datasets = [];
+      const palette = [
+        '#00ffd0', '#4b7fff', '#ff6384', '#ffa600', '#9c27b0',
+        '#8bc34a', '#ff9800', '#03a9f4', '#f44336', '#cddc39'
+      ];
+
+      for (let k = 0; k < numPaths; k++) {
+        const res = solveSDE(N, T, x0, muFunc, sigmaFunc);
+        
+        // Downsample for Chart.js performance if N is large
+        const stride = Math.ceil(N / 200); 
+        const plotData = [];
+        for(let i=0; i <= N; i+=stride) {
+          plotData.push({ x: res.t[i], y: res.x[i] });
+        }
+        // Ensure last point is added
+        plotData.push({ x: res.t[N], y: res.x[N] });
+
+        datasets.push({
+          label: `Path ${k+1}`,
+          data: plotData,
+          borderColor: palette[k % palette.length],
+          borderWidth: 1.5,
+          fill: false,
+          tension: 0.1
+        });
+      }
+
+      sdeChart.data.datasets = datasets;
+      // Force scales update if switching models (GBM values can be huge)
+      sdeChart.update();
+    }
+
+    // --- 5. Event Listeners ---
+    document.getElementById('simBtn').addEventListener('click', runSimulation);
+    ['drift', 'sigma', 'modelSelect'].forEach(id => {
+      document.getElementById(id).addEventListener('change', runSimulation);
+    });
+
+    // Initial Run
+    runSimulation();
+
+  </script>
+</body>
+</html>

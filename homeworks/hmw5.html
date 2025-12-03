@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Homework 7 — Penetration Score Random Walk</title>
+  <title>Homework 7 — Random Walks & Symmetric Binary Processes</title>
   <link rel="stylesheet" href="../assets/css/style-hmw5.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
@@ -15,257 +15,453 @@
   <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
-<header>
-  <h1>Statistics & Cybersecurity</h1>
-  <br>
-  <nav>
-    <a href="../index.html">Home</a>
-    <a class="active" href="hmw6.html">Homework 8</a>
-  </nav>
-</header>
-<main>
-  <h2>Homework 7 — Penetration Score Process Simulation</h2>
-  <div class="callout">
-    <h3>Context and Objective</h3>
-    <p>
-      This simulation models the resilience of a server under continuous attack by multiple independent adversaries, week by week. Each step increments the cumulative score either up (+1 for a secure week) or down (-1 for a breach). The probabilities depend on the number of attackers \(m\) and the individual breach probability \(p\).
-    </p>
-    <p>
-      <strong>Breach probability:</strong> <br>
-      \(\pi = 1 - (1 - p)^m\)
-    </p>
-    <p>
-      <strong>Probability of a secure week:</strong> <br>
-      \(q = (1 - p)^m\)
-    </p>
-  </div>
-  
-  <section>
-    <h3>Simulation Parameters</h3>
-    <div class="controls">
-      <div>
-        <label for="weeks">Weeks (n)</label>
-        <br>
-        <input id="weeks" type="number" min="5" max="500" step="1" value="50">
-      </div>
-      <div>
-        <label for="attackers">Attackers (m)</label>
-        <br>
-        <input id="attackers" type="number" min="1" max="1000" step="1" value="5">
-      </div>
-      <div>
-        <label for="p">Per-attacker breach probability (p)</label>
-        <br>
-        <input id="p" type="range" min="0" max="1" step="0.01" value="0.15" oninput="pVal.textContent=this.value">
-        <div class="mini">p = <span id="pVal">0.15</span></div>
-      </div>
-      <div>
-        <label for="runs">Trajectories simulated (R)</label>
-        <br>
-        <input id="runs" type="number" min="10" max="20000" step="10" value="2000">
-      </div>
-      <div>
-        <button id="runBtn">Run Simulation</button>
-      </div>
-    </div>
-    <p class="mini note">
-      <em>
-        Adjust the parameters above to explore different penetration testing scenarios and security resiliency.
-      </em>
-    </p>
-  </section>
-  
-  <section>
-    <h3>Sample Trajectories: Score Evolution Over Time</h3>
-    <p>
-      The chart below shows several random walk sample paths of the cumulative security score, week by week.
-      Each colored line represents an independent simulation realization. Fluctuations represent the randomness of attacks, while overall trends reveal the average defensive posture given the chosen parameters.
-    </p>
-    <canvas id="trajChart" height="220"></canvas>
-    <p class="mini">
-      Each color corresponds to a separate simulation. <br>
-      If the lines tend downward, the system is vulnerable; if stable or trending upward, the defense is strong.
-    </p>
-  </section>
+  <header>
+    <h1>Statistics & Cybersecurity</h1>
+    <br>
+    <nav>
+      <a href="../index.html">Home</a>
+      <a class="active" href="hmw6.html">Homework 8</a>
+    </nav>
+  </header>
 
-  <section>
-    <h3>Final Scores: Simulation vs Theoretical Prediction</h3>
-    <p>
-      Below is the distribution of final cumulative scores after all weeks across all simulated runs.<br>
-      The bar chart shows empirical probabilities from the simulation, while the line represents the theoretical binomial distribution prediction for these parameters.
-    </p>
-    <canvas id="histChart" height="240"></canvas>
-    <p class="mini">
-      The width and location of the curve depend on attacker count, individual breach probability, and test duration.
-    </p>
-    <p class="mini" id="metrics"></p>
-  </section>
-  
-  <section>
-    <h3>Statistical Properties & Notes</h3>
-    <ul>
-      <p><strong>Expected mean:</strong> \(\mathbb{E}[S_n] = n(2q-1) = n(1-2\pi)\)</p>
-      <p><strong>Variance:</strong> \(\operatorname{Var}(S_n) = 4nq(1-q) = 4n\pi(1-\pi)\)</p>
-      <p><strong>Note:</strong> process \(S_n\) corresponds to a shifted binomial: if \(K\) is the number of secure weeks (\(K \sim \text{Binomial}(n,q)\)), then \(S_n = 2K - n\).</p>
-    </ul>
-    <div class="codebox"><pre><code>
-// Technical notes
-// Breach probability: pi = 1 - (1 - p)^m
-// Secure week probability: q = (1 - p)^m
-// Weekly step: +1 with prob q, -1 with prob 1-q
-// Final score S_n is related to number of secure weeks K by S_n = 2K - n
-    </code></pre></div>
-  </section>
-</main>
-<footer>
-  <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
-</footer>
-<script>
-// Helpers
-const rand = Math.random;
-function simulateWalk(n, q){
-  const y = new Array(n); let s = 0;
-  for (let i=0;i<n;i++){
-    s += (rand() < q) ? +1 : -1;
-    y[i] = s;
-  }
-  return y;
-}
-function comb(n,k){
-  if (k<0||k>n) return 0;
-  if (k===0||k===n) return 1;
-  let res = 1;
-  for (let i=1;i<=k;i++){ res = res * (n - k + i) / i; }
-  return res;
-}
-function theoreticalSnPMF(n, q){
-  const xs = [], ps = [];
-  for (let k = -n; k <= n; k += 2){
-    const r = (n + k)/2;
-    const p = comb(n, r) * Math.pow(q, r) * Math.pow(1-q, n-r);
-    xs.push(k); ps.push(p);
-  }
-  return {xs, ps};
-}
-// Charts
-const trajCtx = document.getElementById('trajChart').getContext('2d');
-const histCtx = document.getElementById('histChart').getContext('2d');
-let trajChart, histChart;
-function buildTrajChart(lines){
-  if (trajChart) trajChart.destroy();
-  const labels = Array.from({length: lines[0].length}, (_,i)=> i+1);
-  const palette = ['#00ffd0','#4b7fff','#ff6384','#ffa600','#9c27b0','#8bc34a','#ff9800','#03a9f4','#f44336','#cddc39'];
-  const datasets = lines.map((y, i)=>({
-    label: 'Traj ' + (i+1),
-    data: y,
-    borderColor: palette[i % palette.length],
-    backgroundColor: palette[i % palette.length] + '33',
-    borderWidth: 1.4,
-    pointRadius: 0,
-    tension: 0
-  }));
-  trajChart = new Chart(trajCtx, {
-    type: 'line',
-    data: { labels, datasets },
-    options: {
-      animation: false,
-      plugins: {
-        legend: { display: false, labels: { color: '#e5e9f0' } }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Week', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } },
-        y: { title: { display: true, text: 'Cumulative Score $S_n$', color: '#e5e9f0' }, ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' } }
-      }
-    }
-  });
-}
-function buildHistChart(xs, simCounts, thProbs){
-  if (histChart) histChart.destroy();
-  const total = simCounts.reduce((a,b)=>a+b,0)||1;
-  const simProb = simCounts.map(c => c/total);
-  histChart = new Chart(histCtx, {
-    type: 'bar',
-    data: {
-      labels: xs.map(String),
-      datasets: [
-        {
-          label: 'Simulation (probability)',
-          data: simProb,
-          backgroundColor: 'rgba(75,127,255,0.35)',
-          borderColor: 'rgba(75,127,255,0.9)',
-          borderWidth: 1.5,
-          borderRadius: 6
-        },
-        {
-          label: 'Theoretical Binomial',
-          type: 'line',
-          data: thProbs,
-          borderColor: 'rgba(0,255,208,0.95)',
-          backgroundColor: 'rgba(0,255,208,0.15)',
-          tension: .15,
-          pointRadius: 0,
-          fill: false
+  <main>
+    <h2>Homework 7 — Random Walks & Symmetric Binary Processes</h2>
+
+    <section>
+      <h3>Introduction</h3>
+      <p>
+        While <strong>Homework 3</strong> explored the Law of Large Numbers through one-directional accumulation (counting successes from 0 to \(n\)), 
+        <strong>Homework 7</strong> introduces a fundamentally different perspective: the <strong>symmetric random walk</strong>. 
+        Instead of tracking cumulative success rates, we now model a process where each step can move us either <strong>up (+1, secure)</strong> or <strong>down (-1, breached)</strong>.
+      </p>
+      <p>
+        This homework demonstrates how a simple security model—a server facing weekly attacks—naturally leads to one of the most important structures in probability theory: 
+        the <strong>random walk</strong> and its connection to <strong>binomial distributions</strong>.
+      </p>
+      
+      
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Aspect</th>
+              <th>Homework 4 (Bernoulli)</th>
+              <th>Homework 7 (Random Walk)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Step Values</strong></td>
+              <td>0 or 1</td>
+              <td>-1 or +1</td>
+            </tr>
+            <tr>
+              <td><strong>Range</strong></td>
+              <td>\([0, n]\)</td>
+              <td>\([-n, +n]\)</td>
+            </tr>
+            <tr>
+              <td><strong>Direction</strong></td>
+              <td>One-way accumulation</td>
+              <td>Bidirectional movement</td>
+            </tr>
+            <tr>
+              <td><strong>Final Position</strong></td>
+              <td>\(k \in \{0,1,\dots,n\}\)</td>
+              <td>\(s \in \{-n, -n+2, \dots, n\}\)</td>
+            </tr>
+            <tr>
+              <td><strong>Distribution</strong></td>
+              <td>Binomial\((n, p)\)</td>
+              <td>Transformed Binomial</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section>
+      <h3 style="margin-top: 3rem;">Problem Statement: Server Security Scenario</h3>
+      <div class="callout">
+        <p>
+          Consider a server that receives security updates every week for <strong>\(n\)</strong> weeks. There are <strong>\(m\)</strong> attackers who attempt to breach the system.
+          Each attacker has an independent probability <strong>\(p\)</strong> of penetrating the server.
+        </p>
+        <p><strong>Scoring System:</strong></p>
+        <ul style="list-style: none; padding:0;">
+          <li>Server Secure (Week \(i\)): Add <strong>+1</strong></li>
+          <li>Server Breached (Week \(i\)): Add <strong>-1</strong></li>
+        </ul>
+      </div>
+
+      <div class="codebox">
+        <h4 style="margin-top:0;">Mathematical Formulation</h4>
+        <p>Let \(X_i\) be the outcome of week \(i\):</p>
+        <p><strong>\(X_i = +1\)</strong> with probability \(q = (1-p)^m\) (All attackers fail)</p>
+        <p><strong>\(X_i = -1\)</strong> with probability \(p' = 1 - (1-p)^m\) (At least one succeeds)</p>
+        <br>
+        <p><strong>Cumulative Score:</strong></p> 
+        <p>\[S(n) = \sum_{i=1}^n X_i\]</p>
+      </div>
+    </section>
+
+    <hr style="border: 0; border-top: 1px solid #333; margin: 3rem 0;">
+
+    <section>
+      <h3>Interactive Simulation</h3>
+      <p>
+        Use the controls below to simulate the server security scenario. Observe how the parameters affect the <strong>"drift"</strong> of the random walk.
+      </p>
+
+      <div class="scenario-btns">
+        <button onclick="setScenario(1)">1. Balanced (p=0.5)</button>
+        <button onclick="setScenario(2)">2. Secure System</button>
+        <button onclick="setScenario(3)">3. Multiple Attackers</button>
+      </div>
+
+      <div class="controls">
+        <div>
+          <label for="weeks">Weeks (n)</label>
+          <input id="weeks" type="number" min="10" max="500" value="50">
+        </div>
+        <div>
+          <label for="attackers">Attackers (m)</label>
+          <input id="attackers" type="number" min="1" max="10" value="1">
+        </div>
+        <div>
+          <label for="prob">Attacker Prob (p)</label>
+          <input id="prob" type="number" step="0.05" min="0" max="1" value="0.5">
+        </div>
+        <div>
+          <label for="runs">Trajectories</label>
+          <input id="runs" type="number" min="100" max="2000" value="500">
+        </div>
+        <div style="grid-column: 1 / -1;">
+          <button id="runBtn" onclick="runSimulation()">Run Simulation</button>
+        </div>
+      </div>
+
+      <h4>Random Walk Trajectories</h4>
+      <canvas id="trajChart" height="500" width="700"></canvas>
+      
+      <h4>Distribution of Final Scores (Empirical vs. Theory)</h4>
+      <canvas id="distChart" height="500" width="700"></canvas>
+
+      <div id="statsBox" class="box" style="margin-top: 1rem; text-align: left; font-size: 0.9rem;">
+        </div>
+    </section>
+
+    <section id="analysis">
+      <h3>Results and Analysis</h3>
+      <p>
+        By running the simulation with different parameters, we observe distinct behaviors in the random walk. 
+        Below is the analysis of the three core scenarios provided in the simulation controls.
+      </p>
+
+      <div class="box">
+        <h4>1. Balanced Security (p = 0.5, m = 1)</h4>
+        <p>
+          With a single attacker having a 50% success rate, we have <strong>\(q = 0.5\)</strong> (secure) and <strong>\(p' = 0.5\)</strong> (breached).
+          This creates a <strong>Symmetric Random Walk</strong>.
+        </p>
+        <p style="text-align: left; display: inline-block;">
+          <strong>Observations:</strong><br>
+          • Trajectories cluster around <strong>0</strong>.<br>
+          • The distribution follows a binomial centered at \(n/2\), transformed to scores.<br>
+          • Expected final score: \(\mathbb{E}[S(n)] = 0\).
+        </p>
+      </div>
+
+      <div class="box">
+        <h4>2. Secure System (p = 0.2, m = 1)</h4>
+        <p>
+          With one weak attacker (20% success rate), the probability of remaining secure is <strong>\(q = 0.8\)</strong>.
+          This results in an <strong>Asymmetric Random Walk</strong> with a strong <strong>positive drift</strong>.
+        </p>
+        <p>
+          <strong>Expected Final Score:</strong><br>
+          \[ \mathbb{E}[S(n)] = n(q - p') = n(0.8 - 0.2) = 0.6n \]
+          For \(n=50\), the average score tends toward \(+30\).
+        </p>
+      </div>
+
+      <div class="box">
+        <h4>3. Multiple Attackers (m = 5, p = 0.3)</h4>
+        <p>
+          With 5 independent attackers each having 30% success, the system is secure only if <strong>all</strong> fail:
+          \[ q = (1 - 0.3)^5 \approx 0.168 \]
+        </p>
+        <p>
+          The system is breached in roughly <strong>83.2%</strong> of weeks. This creates a steep <strong>negative drift</strong>, 
+          illustrating how even "mediocre" attackers can overwhelm a system through numbers.
+        </p>
+      </div>
+
+      <div class="callout">
+        <h4>Convergence & CLT</h4>
+        <p>
+          As the number of weeks \(n\) increases, the distribution of final scores becomes more concentrated relative to the total range 
+          and approaches a <strong>Normal Distribution</strong> (Central Limit Theorem).
+        </p>
+        <div>
+          <p><strong>Standard Deviation of Score:</strong></p>
+          <p>\[ \sigma = 2\sqrt{n \cdot q \cdot p'} \]</p>
+        </div>
+        <p>
+          For \(n=100\) and \(q=0.5\), the standard deviation is \(10\), meaning most trajectories end within \([-20, +20]\).
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h3>Python Implementation</h3>
+      <p>
+        Below is the Python code structure used for the backend logic (logic replicated here in JavaScript for the web).
+        It highlights the mapping from <strong>Bernoulli trials</strong> to <strong>Random Walk steps</strong>.
+      </p>
+
+      <div class="codebox">
+<pre><code><span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">from</span> scipy.special <span class="kw">import</span> comb
+
+<span class="kw">def</span> <span class="fn">simulate_random_walk</span>(p_secure, n_weeks, n_trajectories):
+    <span class="str">"""
+    Simulate random walk for server security.
+    Returns: Array of shape (n_trajectories, n_weeks+1)
+    """</span>
+    <span class="com"># Generate steps: +1 (secure) or -1 (breached)
+    # Using binomial(1, p) then transforming 0->-1, 1->+1</span>
+    steps = <span class="num">2</span> * np.random.binomial(<span class="num">1</span>, p_secure, size=(n_trajectories, n_weeks)) - <span class="num">1</span>
+    
+    <span class="com"># Calculate cumulative sums (adding initial 0 state)</span>
+    trajectories = np.concatenate([
+        np.zeros((n_trajectories, <span class="num">1</span>)), 
+        np.cumsum(steps, axis=<span class="num">1</span>)
+    ], axis=<span class="num">1</span>)
+    
+    <span class="kw">return</span> trajectories
+
+<span class="kw">def</span> <span class="fn">theoretical_distribution</span>(n, p_secure):
+    <span class="com"># Possible scores have same parity as n</span>
+    scores = np.arange(-n, n+<span class="num">1</span>, <span class="num">2</span>)
+    
+    <span class="com"># Calculate k (successes) for each score s: s = 2k - n => k = (n+s)/2</span>
+    k_values = ((n + scores) / <span class="num">2</span>).astype(<span class="kw">int</span>)
+    
+    <span class="com"># Binomial probability mass function</span>
+    q = p_secure
+    probs = [comb(n, k) * (q**k) * ((<span class="num">1</span>-q)**(n-k)) <span class="kw">for</span> k <span class="kw">in</span> k_values]
+    
+    <span class="kw">return</span> scores, probs</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h3>Analysis & Connections</h3>
+      
+      <h4>The Fundamental Relationship</h4>
+      <p>
+        If we have <strong>\(k\)</strong> secure weeks (+1) and <strong>\((n-k)\)</strong> breached weeks (-1), the final score is:
+        \[ S(n) = k - (n-k) = 2k - n \]
+        This implies that the number of secure weeks required to reach score \(s\) is:
+        <strong>\(k = (n + S(n)) / 2\)</strong>.
+      </p>
+
+      <h4>Pascal's Triangle & Recurrence</h4>
+      <p>
+        The number of trajectories reaching score \(s\) at step \(n\), denoted <strong>\(N(n, s)\)</strong>, satisfies the recurrence:
+        \[ N(n, s) = N(n-1, s-1) + N(n-1, s+1) \]
+        This is structurally identical to <strong>Pascal's Identity</strong> for binomial coefficients:
+        \[ C(n, k) = C(n-1, k-1) + C(n-1, k) \]
+      </p>
+      
+      
+      <div class="callout">
+        <h3>Conclusion</h3>
+        <p>
+          This homework demonstrates that random walks naturally emerge from <strong>symmetric binary processes</strong>.
+          The transition from Homework 4’s one-directional accumulation to this bidirectional movement reveals 
+          that the same binomial coefficients <strong>\(C(n,k)\)</strong> count both the ways to choose \(k\) successes and the number of paths reaching a specific coordinate in a random walk.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>&copy; 2025 Vincenzo Milillo — built using HTML, CSS, JavaScript</p>
+  </footer>
+
+  <script>
+    // --- Simulation Logic ---
+    let trajChartInstance = null;
+    let distChartInstance = null;
+
+    // Helper: Combinations
+    function combinations(n, k) {
+        if (k < 0 || k > n) return 0;
+        if (k === 0 || k === n) return 1;
+        if (k > n / 2) k = n - k;
+        let res = 1;
+        for (let i = 1; i <= k; i++) {
+            res = res * (n - i + 1) / i;
         }
-      ]
-    },
-    options: {
-      plugins: { legend: { labels: { color: '#e5e9f0' } } },
-      scales: {
-        x: { ticks: { color:'#e5e9f0', maxRotation: 0 }, grid: { color:'#23272f' } },
-        y: { ticks: { color:'#e5e9f0' }, grid: { color:'#23272f' }, beginAtZero: true }
-      }
+        return res;
     }
-  });
-}
-function run(){
-  const n = Math.max(5, Math.min(500, parseInt(document.getElementById('weeks').value||50)));
-  const m = Math.max(1, Math.min(1000, parseInt(document.getElementById('attackers').value||5)));
-  const p = Math.max(0, Math.min(1, parseFloat(document.getElementById('p').value||0.15)));
-  const R = Math.max(10, Math.min(20000, parseInt(document.getElementById('runs').value||2000)));
-  const pi = 1 - Math.pow(1-p, m);
-  const q = Math.pow(1 - p, m);
-  const show = Math.min(10, R);
-  const lines = [];
-  for (let i=0;i<show;i++) lines.push(simulateWalk(n, q));
-  buildTrajChart(lines);
-  const xs = [];
-  const index = new Map();
-  let idx=0;
-  for (let k = -n; k <= n; k+=2){
-    xs.push(k);
-    index.set(k, idx++);
-  }
-  const counts = new Array(xs.length).fill(0);
-  for (let r=0;r<R;r++){
-    let s = 0;
-    for (let i=0;i<n;i++) s += (rand() < q) ? +1 : -1;
-    counts[index.get(s)]++;
-  }
-  const th = theoreticalSnPMF(n, q);
-  buildHistChart(xs, counts, th.ps);
-  const total = counts.reduce((a,b)=>a+b,0);
-  let mean = 0, var_ = 0;
-  for (let i=0;i<xs.length;i++){
-    mean += xs[i]*counts[i];
-  }
-  mean /= total||1;
-  for (let i=0;i<xs.length;i++){
-    const d=xs[i]-mean;
-    var_ += d*d*counts[i];
-  }
-  var_ /= total||1;
-  const thMean = n*(2*q-1);
-  const thVar = 4*n*q*(1-q);
-  document.getElementById('metrics').textContent =
-    `q = (1-p)^m = ${(q).toFixed(6)} | weekly breach π = ${pi.toFixed(6)} | Empirical mean ≈ ${mean.toFixed(3)}, variance ≈ ${var_.toFixed(3)} | Theoretical mean = ${thMean.toFixed(3)}, variance = ${thVar.toFixed(3)}`;
-}
-document.getElementById('runBtn').addEventListener('click', run);
-const inputs = ['weeks', 'attackers', 'p', 'runs'];
-inputs.forEach(id => {
-  const el = document.getElementById(id);
-  el.addEventListener('input', run);
-});
-run();
-</script>
+
+    // Helper: Theoretical Dist
+    function getTheoretical(n, q) {
+        let scores = [];
+        let probs = [];
+        let p_fail = 1 - q;
+
+        // Iterate steps of 2 from -n to n
+        for (let s = -n; s <= n; s += 2) {
+            let k = (n + s) / 2; // successes
+            let prob = combinations(n, k) * Math.pow(q, k) * Math.pow(p_fail, n - k);
+            scores.push(s);
+            probs.push(prob);
+        }
+        return { scores, probs };
+    }
+
+    function setScenario(id) {
+        if (id === 1) { // Balanced
+            document.getElementById('weeks').value = 50;
+            document.getElementById('attackers').value = 1;
+            document.getElementById('prob').value = 0.5;
+        } else if (id === 2) { // Secure
+            document.getElementById('weeks').value = 50;
+            document.getElementById('attackers').value = 1;
+            document.getElementById('prob').value = 0.2;
+        } else if (id === 3) { // Multiple Attackers
+            document.getElementById('weeks').value = 50;
+            document.getElementById('attackers').value = 5;
+            document.getElementById('prob').value = 0.3;
+        }
+        runSimulation();
+    }
+
+    function runSimulation() {
+        // 1. Get Inputs
+        const n = parseInt(document.getElementById('weeks').value);
+        const m = parseInt(document.getElementById('attackers').value);
+        const p_att = parseFloat(document.getElementById('prob').value);
+        const runs = parseInt(document.getElementById('runs').value);
+
+        // 2. Derived Probabilities
+        // q = Prob(All attackers fail) = (1 - p)^m
+        const q = Math.pow(1 - p_att, m);
+        const p_prime = 1 - q; // Prob(At least one breach)
+
+        // 3. Simulate Trajectories
+        const allFinalScores = [];
+        const datasets = [];
+        const maxTrajToShow = 100; // Limit lines for performance
+
+        for (let r = 0; r < runs; r++) {
+            let score = 0;
+            const path = [0];
+            for (let i = 0; i < n; i++) {
+                // Determine step: +1 (secure) with prob q, -1 (breach) with prob p'
+                const step = (Math.random() < q) ? 1 : -1;
+                score += step;
+                path.push(score);
+            }
+            allFinalScores.push(score);
+
+            if (r < maxTrajToShow) {
+                datasets.push({
+                    data: path,
+                    borderColor: r === 0 ? '#00ffd0' : 'rgba(75, 127, 255, 0.3)',
+                    borderWidth: r === 0 ? 2 : 1,
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.1
+                });
+            }
+        }
+
+        // 4. Update Trajectory Chart
+        const ctxTraj = document.getElementById('trajChart').getContext('2d');
+        if (trajChartInstance) trajChartInstance.destroy();
+
+        trajChartInstance = new Chart(ctxTraj, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: n + 1}, (_, i) => i),
+                datasets: datasets
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { title: {display: true, text: 'Week', color: '#7c8da4'}, ticks: {color: '#e5e9f0'}, grid: {color: '#23272f'} },
+                    y: { title: {display: true, text: 'Score', color: '#7c8da4'}, ticks: {color: '#e5e9f0'}, grid: {color: '#23272f'} }
+                }
+            }
+        });
+
+        // 5. Build Histogram Data
+        // Map scores to counts
+        const scoreCounts = {};
+        allFinalScores.forEach(s => scoreCounts[s] = (scoreCounts[s] || 0) + 1);
+        
+        // Prepare data for Chart 2 (Theory vs Empirical)
+        const theory = getTheoretical(n, q);
+        const empiricalProbs = theory.scores.map(s => (scoreCounts[s] || 0) / runs);
+
+        // 6. Update Distribution Chart
+        const ctxDist = document.getElementById('distChart').getContext('2d');
+        if (distChartInstance) distChartInstance.destroy();
+
+        distChartInstance = new Chart(ctxDist, {
+            type: 'bar',
+            data: {
+                labels: theory.scores,
+                datasets: [
+                    {
+                        label: 'Empirical',
+                        data: empiricalProbs,
+                        backgroundColor: 'rgba(75, 127, 255, 0.5)',
+                        borderWidth: 0
+                    },
+                    {
+                        label: 'Theoretical',
+                        data: theory.probs,
+                        type: 'line',
+                        borderColor: '#ff6384',
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                animation: false,
+                responsive: true,
+                plugins: { legend: { labels: { color: '#e5e9f0' } } },
+                scales: {
+                    x: { title: {display: true, text: 'Final Score', color: '#7c8da4'}, ticks: {color: '#e5e9f0'}, grid: {color: '#23272f'} },
+                    y: { title: {display: true, text: 'Probability', color: '#7c8da4'}, ticks: {color: '#e5e9f0'}, grid: {color: '#23272f'} }
+                }
+            }
+        });
+
+        // 7. Update Stats Text
+        const meanEmpirical = allFinalScores.reduce((a,b)=>a+b,0) / runs;
+        const meanTheoretical = n * (2 * q - 1);
+        
+        document.getElementById('statsBox').innerHTML = `
+          <strong>Parameters:</strong> Weeks (n)=${n}, Attackers (m)=${m}, P(indiv)=${p_att}<br>
+          <strong>Probabilities:</strong> P(Secure q) = ${(q*100).toFixed(2)}%, P(Breach) = ${(p_prime*100).toFixed(2)}%<br>
+          <strong>Mean Score:</strong> Theory = ${meanTheoretical.toFixed(2)} | Empirical = ${meanEmpirical.toFixed(2)}
+        `;
+    }
+
+    // Initial Run
+    window.onload = () => setScenario(1);
+  </script>
 </body>
 </html>
